@@ -3,7 +3,7 @@ package com.sucker.suckermod;
 import net.minecraft.block.Block;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
-
+import net.minecraft.tileentity.TileEntityType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
@@ -103,6 +103,12 @@ public class SuckerMod
         	Item.Properties properties = new Item.Properties().group(setup.itemGroup);
         	event.getRegistry().register(new BlockItem(ModBlocks.SUCKERBLOCK, properties).setRegistryName("suckerblock"));
         	event.getRegistry().register(new PipeItem());
+        }
+        
+        @SubscribeEvent
+        public static void onTileEntityRegistry(final RegistryEvent.Register<TileEntityType<?>> event) {
+        	event.getRegistry().register(TileEntityType.Builder.create(SuckerBlockTile::new,
+        			ModBlocks.SUCKERBLOCK).build(null).setRegistryName("suckerblock"));
         }
     }
 }

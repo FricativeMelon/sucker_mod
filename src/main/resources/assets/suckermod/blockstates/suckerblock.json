@@ -1,5 +1,10 @@
 {
 	"variants": {
-		"": { "model": "suckermod:block/suckerblock" }
+		"facing=north": { "model": "suckermod:block/suckerblock" },
+		"facing=south": { "model": "suckermod:block/suckerblock", "y": 180 },
+		"facing=west": { "model": "suckermod:block/suckerblock", "y": 270 },
+		"facing=east": { "model": "suckermod:block/suckerblock", "y": 90 },
+		"facing=up": { "model": "suckermod:block/suckerblock", "x": -90 },
+		"facing=down": { "model": "suckermod:block/suckerblock", "x": 90 }
 	}
 }

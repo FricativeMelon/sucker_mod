@@ -1,6 +1,12 @@
 {
-	"parent": "block/cube_all",
+	"parent": "block/cube",
 	"textures": {
-		"all":"suckermod:block/suckerblock"
+		"particle":"suckermod:block/suckerblock",
+		"down":"suckermod:block/suckerblock_down",
+		"up":"suckermod:block/suckerblock_up",
+		"east":"suckermod:block/suckerblock_east",
+		"west":"suckermod:block/suckerblock_west",
+		"north":"suckermod:block/suckerblock_front",
+		"south":"suckermod:block/suckerblock_back"
 	}
 }
