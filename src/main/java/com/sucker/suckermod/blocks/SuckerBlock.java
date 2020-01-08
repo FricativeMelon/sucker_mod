@@ -73,7 +73,6 @@ public class SuckerBlock extends Block {
     @Override
 	public ActionResultType func_225533_a_(BlockState state, World world, BlockPos pos,
 			PlayerEntity player, Hand hand, BlockRayTraceResult brtr) {
-    	System.out.println("r-clicked the block");
     	if (!world.isRemote) {
     		TileEntity tileEntity = world.getTileEntity(pos);
     		if (tileEntity instanceof INamedContainerProvider &&
@@ -82,7 +81,6 @@ public class SuckerBlock extends Block {
     			NetworkHooks.openGui((ServerPlayerEntity) player,
     					             (INamedContainerProvider) tileEntity,
     					             tileEntity.getPos());
-    			System.out.println("GUI opened successfully!");
         	} else {
         		throw new IllegalStateException("Our named container provider or server player is missing!");
         	}
