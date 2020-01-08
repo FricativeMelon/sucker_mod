@@ -24,6 +24,7 @@ public class SuckerBlockContainer extends Container {
 	
 	public SuckerBlockContainer(int id, World world, BlockPos pos, PlayerInventory inv, PlayerEntity player) {
 		super(ModBlocks.SUCKERBLOCK_CONTAINER, id);
+		System.out.println("creating container...");
 		this.tileEntity = world.getTileEntity(pos);
 		this.playerEntity = player;
 		this.playerInventory = new InvWrapper((IInventory) playerInventory);

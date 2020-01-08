@@ -94,21 +94,11 @@ public class SuckerMod
     }
 */
     
-    public static <T extends IForgeRegistryEntry<T>> void register(
-    		final RegistryEvent.Register<T> event, T t, String name) {
-    	event.getRegistry().register(t.setRegistryName(new ResourceLocation(name)));
-    }
-    
-    public static <T extends IForgeRegistryEntry<T>> void register(
-    		final RegistryEvent.Register<T> event, T t) {
-    	event.getRegistry().register(t);
-    }
-    
     // You can use EventBusSubscriber to automatically subscribe events on the contained class (this is subscribing to the MOD
     // Event bus for receiving Registry Events)
     @Mod.EventBusSubscriber(bus=Mod.EventBusSubscriber.Bus.MOD)
     public static class RegistryEvents {
-        /*@SubscribeEvent
+        @SubscribeEvent
         public static void onBlocksRegistry(final RegistryEvent.Register<Block> event) {
             event.getRegistry().register(new SuckerBlock());
         }
@@ -132,36 +122,6 @@ public class SuckerMod
                 BlockPos pos = data.readBlockPos();
                 return new SuckerBlockContainer(windowId, SuckerMod.proxy.getClientWorld(), pos, inv, SuckerMod.proxy.getClientPlayer());
             }).setRegistryName("suckerblock"));
-        }*/
-        @SubscribeEvent
-        public static void onBlocksRegistry(final RegistryEvent.Register<Block> event) {
-            // register a new block here
-        	SuckerMod.register(event, new SuckerBlock());
-        }
-        @SubscribeEvent
-        public static void onItemsRegistry(final RegistryEvent.Register<Item> event) {
-            // register a new block here
-        	Item.Properties properties = new Item.Properties().group(setup.itemGroup);
-        	SuckerMod.register(event, new BlockItem(ModBlocks.SUCKERBLOCK, properties), "suckerblock");
-        	SuckerMod.register(event, new PipeItem());
-        }
-        
-        @SubscribeEvent
-        public static void onTileEntityRegistry(final RegistryEvent.Register<TileEntityType<?>> event) {
-        	SuckerMod.register(event, TileEntityType.Builder.create(SuckerBlockTile::new,
-        			ModBlocks.SUCKERBLOCK).build(null), "suckerblock");
-        }
-        
-        @SubscribeEvent
-        public static void onContainerRegistry(final RegistryEvent.Register<ContainerType<?>> event) {
-        	SuckerMod.register(event, IForgeContainerType.create(
-        			(windowId, inv, data) -> {
-        				BlockPos pos = data.readBlockPos();
-        				return new SuckerBlockContainer(windowId,
-        						SuckerMod.proxy.getClientWorld(), 
-        						pos, inv,
-        						SuckerMod.proxy.getClientPlayer());
-        			}),"suckerblock");
         }
         
     }

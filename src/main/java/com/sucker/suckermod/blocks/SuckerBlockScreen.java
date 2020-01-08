@@ -19,7 +19,9 @@ public class SuckerBlockScreen extends ContainerScreen<SuckerBlockContainer> {
 	}
 
     @Override
-    public void render(int mouseX, int mouseY, float partialTicks) {
+    public void render(int mouseX, int mouseY, float partialTicks) 
+    {
+    	System.out.println("rendering gui background...");
         this.renderBackground();
         super.render(mouseX, mouseY, partialTicks);
         this.renderHoveredToolTip(mouseX, mouseY);
@@ -31,10 +33,14 @@ public class SuckerBlockScreen extends ContainerScreen<SuckerBlockContainer> {
 
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
+    	System.out.println("drawing gui background...");
         RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+    	System.out.println("1");
         this.minecraft.getTextureManager().bindTexture(GUI);
+    	System.out.println("2");
         int relX = (this.width - this.xSize) / 2;
         int relY = (this.height - this.ySize) / 2;
         this.blit(relX, relY, 0, 0, this.xSize, this.ySize);
+    	System.out.println("Finished drawing gui background!");
     }
 }
