@@ -1,9 +1,13 @@
 package com.sucker.suckermod;
 
 import net.minecraft.block.Block;
+import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
@@ -12,6 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.IForgeRegistryEntry;
 
 import com.sucker.suckermod.blocks.*;
 import com.sucker.suckermod.items.*;
@@ -88,27 +93,76 @@ public class SuckerMod
         LOGGER.info("HELLO from server starting");
     }
 */
+    
+    public static <T extends IForgeRegistryEntry<T>> void register(
+    		final RegistryEvent.Register<T> event, T t, String name) {
+    	event.getRegistry().register(t.setRegistryName(new ResourceLocation(name)));
+    }
+    
+    public static <T extends IForgeRegistryEntry<T>> void register(
+    		final RegistryEvent.Register<T> event, T t) {
+    	event.getRegistry().register(t);
+    }
+    
     // You can use EventBusSubscriber to automatically subscribe events on the contained class (this is subscribing to the MOD
     // Event bus for receiving Registry Events)
     @Mod.EventBusSubscriber(bus=Mod.EventBusSubscriber.Bus.MOD)
     public static class RegistryEvents {
+        /*@SubscribeEvent
+        public static void onBlocksRegistry(final RegistryEvent.Register<Block> event) {
+            event.getRegistry().register(new SuckerBlock());
+        }
+
+        @SubscribeEvent
+        public static void onItemsRegistry(final RegistryEvent.Register<Item> event) {
+            Item.Properties properties = new Item.Properties()
+                    .group(setup.itemGroup);
+            event.getRegistry().register(new BlockItem(ModBlocks.SUCKERBLOCK, properties).setRegistryName("suckerblock"));
+            event.getRegistry().register(new PipeItem());
+        }
+
+        @SubscribeEvent
+        public static void onTileEntityRegistry(final RegistryEvent.Register<TileEntityType<?>> event) {
+            event.getRegistry().register(TileEntityType.Builder.create(SuckerBlockTile::new, ModBlocks.SUCKERBLOCK).build(null).setRegistryName("suckerblock"));
+        }
+
+        @SubscribeEvent
+        public static void onContainerRegistry(final RegistryEvent.Register<ContainerType<?>> event) {
+            event.getRegistry().register(IForgeContainerType.create((windowId, inv, data) -> {
+                BlockPos pos = data.readBlockPos();
+                return new SuckerBlockContainer(windowId, SuckerMod.proxy.getClientWorld(), pos, inv, SuckerMod.proxy.getClientPlayer());
+            }).setRegistryName("suckerblock"));
+        }*/
         @SubscribeEvent
         public static void onBlocksRegistry(final RegistryEvent.Register<Block> event) {
             // register a new block here
-        	event.getRegistry().register(new SuckerBlock());
+        	SuckerMod.register(event, new SuckerBlock());
         }
         @SubscribeEvent
         public static void onItemsRegistry(final RegistryEvent.Register<Item> event) {
             // register a new block here
         	Item.Properties properties = new Item.Properties().group(setup.itemGroup);
-        	event.getRegistry().register(new BlockItem(ModBlocks.SUCKERBLOCK, properties).setRegistryName("suckerblock"));
-        	event.getRegistry().register(new PipeItem());
+        	SuckerMod.register(event, new BlockItem(ModBlocks.SUCKERBLOCK, properties), "suckerblock");
+        	SuckerMod.register(event, new PipeItem());
         }
         
         @SubscribeEvent
         public static void onTileEntityRegistry(final RegistryEvent.Register<TileEntityType<?>> event) {
-        	event.getRegistry().register(TileEntityType.Builder.create(SuckerBlockTile::new,
-        			ModBlocks.SUCKERBLOCK).build(null).setRegistryName("suckerblock"));
+        	SuckerMod.register(event, TileEntityType.Builder.create(SuckerBlockTile::new,
+        			ModBlocks.SUCKERBLOCK).build(null), "suckerblock");
         }
+        
+        @SubscribeEvent
+        public static void onContainerRegistry(final RegistryEvent.Register<ContainerType<?>> event) {
+        	SuckerMod.register(event, IForgeContainerType.create(
+        			(windowId, inv, data) -> {
+        				BlockPos pos = data.readBlockPos();
+        				return new SuckerBlockContainer(windowId,
+        						SuckerMod.proxy.getClientWorld(), 
+        						pos, inv,
+        						SuckerMod.proxy.getClientPlayer());
+        			}),"suckerblock");
+        }
+        
     }
 }

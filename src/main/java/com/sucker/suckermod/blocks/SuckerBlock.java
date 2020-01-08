@@ -17,19 +17,26 @@ import net.minecraft.block.IBucketPickupHandler;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.fluid.IFluidState;
+import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
+import net.minecraft.util.Hand;
 import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.network.NetworkHooks;
 
 public class SuckerBlock extends Block {
 	public SuckerBlock() {
@@ -52,6 +59,7 @@ public class SuckerBlock extends Block {
 		return new SuckerBlockTile();
 	}
 	
+		
 	/*@Override
 	public void onBlockPlacedBy(World world, BlockPos pos, BlockState state,
 			@Nullable LivingEntity entity, ItemStack stack) {
@@ -61,7 +69,24 @@ public class SuckerBlock extends Block {
 		}
 	}*/
 	
-    @Nullable
+	//this is apparently onBlockActivated
+    @Override
+	public ActionResultType func_225533_a_(BlockState state, World world, BlockPos pos,
+			PlayerEntity player, Hand hand, BlockRayTraceResult brtr) {
+		// TODO Auto-generated method stub
+    	if (!world.isRemote) {
+    		TileEntity tileEntity = world.getTileEntity(pos);
+    		if (tileEntity instanceof INamedContainerProvider &&
+    		    player instanceof ServerPlayerEntity) {
+    			NetworkHooks.openGui((ServerPlayerEntity) player,
+    					             (INamedContainerProvider) tileEntity,
+    					             tileEntity.getPos());
+    		}
+    	}
+		return super.func_225533_a_(state, world, pos, player, hand, brtr);
+	}
+
+	@Nullable
     @Override
     public BlockState getStateForPlacement(BlockItemUseContext context) {
         BlockState blockstate = super.getStateForPlacement(context);
