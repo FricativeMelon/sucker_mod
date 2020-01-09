@@ -1,6 +1,8 @@
 package com.sucker.suckermod.blocks;
 
+import java.util.List;
 import java.util.Queue;
+import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -21,6 +23,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.fluid.IFluidState;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.ItemStack;
@@ -36,6 +40,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
+import net.minecraft.world.storage.loot.LootContext;
+import net.minecraft.world.storage.loot.LootParameters;
 import net.minecraftforge.fml.network.NetworkHooks;
 
 public class SuckerBlock extends Block {
@@ -47,7 +54,21 @@ public class SuckerBlock extends Block {
 		this.setDefaultState(this.stateContainer.getBaseState().with(BlockStateProperties.FACING, Direction.NORTH));
 		setRegistryName("suckerblock");
 	}
-	
+
+	@Override
+	public void onReplaced(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
+		if (state.getBlock() != newState.getBlock()) {
+			TileEntity tileentity = worldIn.getTileEntity(pos);
+			if (tileentity instanceof SuckerBlockTile) {
+				SuckerBlockTile sbt = (SuckerBlockTile) tileentity;
+				sbt.dropContents(new Random());
+				worldIn.updateComparatorOutputLevel(pos, this);
+			}
+
+			super.onReplaced(state, worldIn, pos, newState, isMoving);
+		}
+	}
+
 	@Override
 	public boolean hasTileEntity(BlockState state) {
 		return true;
@@ -85,7 +106,7 @@ public class SuckerBlock extends Block {
         		throw new IllegalStateException("Our named container provider or server player is missing!");
         	}
     	}
-		return super.func_225533_a_(state, world, pos, player, hand, brtr);
+		return ActionResultType.SUCCESS;
 	}
 
 	@Nullable
