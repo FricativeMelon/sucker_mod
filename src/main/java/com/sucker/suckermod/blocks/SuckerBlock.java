@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.Lists;
@@ -55,13 +56,14 @@ public class SuckerBlock extends Block {
 		setRegistryName("suckerblock");
 	}
 
+	@SuppressWarnings("NullableProblems")
 	@Override
 	public void onReplaced(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
 		if (state.getBlock() != newState.getBlock()) {
 			TileEntity tileentity = worldIn.getTileEntity(pos);
 			if (tileentity instanceof SuckerBlockTile) {
 				SuckerBlockTile sbt = (SuckerBlockTile) tileentity;
-				sbt.dropContents(new Random());
+				sbt.dropContents(worldIn.getRandom());
 				worldIn.updateComparatorOutputLevel(pos, this);
 			}
 
@@ -108,6 +110,8 @@ public class SuckerBlock extends Block {
     	}
 		return ActionResultType.SUCCESS;
 	}
+
+
 
 	@Nullable
     @Override

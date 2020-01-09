@@ -52,7 +52,7 @@ public class SuckerBlockContainer extends Container {
                 }
                 slot.onSlotChange(stack, itemstack);
             } else {
-                if (stack.getItem() == Items.DIAMOND) {
+                if (SuckerBlockTile.isStackAcceptable(index, stack)) {
                     if (!this.mergeItemStack(stack, 0, 1, false)) {
                         return ItemStack.EMPTY;
                     }
