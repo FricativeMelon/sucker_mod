@@ -1,0 +1,10 @@
+{
+	"variants": {
+		"facing=north": { "model": "suckermod:block/harvesterblock" },
+		"facing=south": { "model": "suckermod:block/harvesterblock", "y": 180 },
+		"facing=west": { "model": "suckermod:block/harvesterblock", "y": 270 },
+		"facing=east": { "model": "suckermod:block/harvesterblock", "y": 90 },
+		"facing=up": { "model": "suckermod:block/harvesterblock", "x": -90 },
+		"facing=down": { "model": "suckermod:block/harvesterblock", "x": 90 }
+	}
+}

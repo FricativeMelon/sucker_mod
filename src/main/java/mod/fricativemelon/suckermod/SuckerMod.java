@@ -1,11 +1,16 @@
-package com.sucker.suckermod;
+package mod.fricativemelon.suckermod;
 
+import mod.fricativemelon.suckermod.blocks.*;
+import mod.fricativemelon.suckermod.items.PipeItem;
+import mod.fricativemelon.suckermod.setup.ClientProxy;
+import mod.fricativemelon.suckermod.setup.IProxy;
+import mod.fricativemelon.suckermod.setup.ModSetup;
+import mod.fricativemelon.suckermod.setup.ServerProxy;
 import net.minecraft.block.Block;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.tileentity.TileEntityType;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
@@ -16,11 +21,7 @@ import net.minecraftforge.fml.common.Mod;
 
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.registries.IForgeRegistryEntry;
 
-import com.sucker.suckermod.blocks.*;
-import com.sucker.suckermod.items.*;
-import com.sucker.suckermod.setup.*;
 /*
 import net.minecraft.block.Blocks;
 import net.minecraftforge.common.MinecraftForge;
@@ -100,28 +101,41 @@ public class SuckerMod
     public static class RegistryEvents {
         @SubscribeEvent
         public static void onBlocksRegistry(final RegistryEvent.Register<Block> event) {
-            event.getRegistry().register(new SuckerBlock());
+            event.getRegistry().register(new PlacerBlock());
+            event.getRegistry().register(new HarvesterBlock());
+
         }
 
         @SubscribeEvent
         public static void onItemsRegistry(final RegistryEvent.Register<Item> event) {
             Item.Properties properties = new Item.Properties()
                     .group(setup.itemGroup);
-            event.getRegistry().register(new BlockItem(ModBlocks.SUCKERBLOCK, properties).setRegistryName("suckerblock"));
+            event.getRegistry().register(new BlockItem(ModBlocks.PLACERBLOCK, properties)
+                    .setRegistryName("placerblock"));
+            event.getRegistry().register(new BlockItem(ModBlocks.HARVESTERBLOCK, properties)
+                    .setRegistryName("harvesterblock"));
+
             event.getRegistry().register(new PipeItem());
         }
 
         @SubscribeEvent
         public static void onTileEntityRegistry(final RegistryEvent.Register<TileEntityType<?>> event) {
-            event.getRegistry().register(TileEntityType.Builder.create(SuckerBlockTile::new, ModBlocks.SUCKERBLOCK).build(null).setRegistryName("suckerblock"));
+            event.getRegistry().register(TileEntityType.Builder.create(PlacerBlockTile::new, ModBlocks.PLACERBLOCK)
+                    .build(null).setRegistryName("placerblock"));
+            event.getRegistry().register(TileEntityType.Builder.create(HarvesterBlockTile::new, ModBlocks.HARVESTERBLOCK)
+                    .build(null).setRegistryName("harvesterblock"));
         }
 
         @SubscribeEvent
         public static void onContainerRegistry(final RegistryEvent.Register<ContainerType<?>> event) {
             event.getRegistry().register(IForgeContainerType.create((windowId, inv, data) -> {
                 BlockPos pos = data.readBlockPos();
-                return new SuckerBlockContainer(windowId, SuckerMod.proxy.getClientWorld(), pos, inv, SuckerMod.proxy.getClientPlayer());
-            }).setRegistryName("suckerblock"));
+                return new PlacerBlockContainer(windowId, SuckerMod.proxy.getClientWorld(), pos, inv, SuckerMod.proxy.getClientPlayer());
+            }).setRegistryName("placerblock"));
+            event.getRegistry().register(IForgeContainerType.create((windowId, inv, data) -> {
+                BlockPos pos = data.readBlockPos();
+                return new HarvesterBlockContainer(windowId, SuckerMod.proxy.getClientWorld(), pos, inv, SuckerMod.proxy.getClientPlayer());
+            }).setRegistryName("harvesterblock"));
         }
         
     }

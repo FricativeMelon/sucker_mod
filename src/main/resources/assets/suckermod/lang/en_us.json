@@ -1,6 +1,7 @@
 {
 	"item.suckermod.pipeitem": "Pipe",
-	"block.suckermod.suckerblock": "Sucker",
+	"block.suckermod.placerblock": "Placer",
+	"block.suckermod.harvesterblock": "Harvester",
 	
 	"comment": "Creative Tabs",
 	"itemGroup.suckermod": "Sucker Mod"

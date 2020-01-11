@@ -1,10 +1,7 @@
-package com.sucker.suckermod.blocks;
+package mod.fricativemelon.suckermod.blocks;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.sucker.suckermod.SuckerMod;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.util.ResourceLocation;

@@ -1,4 +1,4 @@
-package com.sucker.suckermod.blocks;
+package mod.fricativemelon.suckermod.blocks;
 
 import java.util.Queue;
 import java.util.function.Consumer;

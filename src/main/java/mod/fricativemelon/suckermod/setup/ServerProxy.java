@@ -1,4 +1,4 @@
-package com.sucker.suckermod.setup;
+package mod.fricativemelon.suckermod.setup;
 
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.world.World;

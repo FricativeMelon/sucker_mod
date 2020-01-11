@@ -1,22 +1,22 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
+    "###",
     "#X#",
-    "XRX",
-    "#X#"
+    "#R#"
   ],
   "key": {
     "#": {
-		"tag": "forge:ingots/iron"
+		"item": "minecraft:cobblestone"
     },
     "X": {
-    	"tag": "forge:ingots/gold"
+        "item": "minecraft:flint"
     },
     "R": {
     	"tag": "forge:dusts/redstone"
     }
   },
   "result": {
-    "item": "suckermod:suckerblock"
+    "item": "suckermod:harvesterblock"
   }
 }

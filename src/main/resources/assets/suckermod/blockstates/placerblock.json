@@ -1,0 +1,10 @@
+{
+	"variants": {
+		"facing=north": { "model": "suckermod:block/placerblock" },
+		"facing=south": { "model": "suckermod:block/placerblock", "y": 180 },
+		"facing=west": { "model": "suckermod:block/placerblock", "y": 270 },
+		"facing=east": { "model": "suckermod:block/placerblock", "y": 90 },
+		"facing=up": { "model": "suckermod:block/placerblock", "x": -90 },
+		"facing=down": { "model": "suckermod:block/placerblock", "x": 90 }
+	}
+}

@@ -1,4 +1,4 @@
-package com.sucker.suckermod;
+package mod.fricativemelon.suckermod;
 
 import java.util.function.Predicate;
 import java.util.function.Supplier;

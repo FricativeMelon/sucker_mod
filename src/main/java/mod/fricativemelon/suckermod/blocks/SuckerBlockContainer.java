@@ -1,12 +1,13 @@
-package com.sucker.suckermod.blocks;
+package mod.fricativemelon.suckermod.blocks;
 
+import net.minecraft.block.Block;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IWorldPosCallable;
 import net.minecraft.util.math.BlockPos;
@@ -16,14 +17,15 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.items.wrapper.InvWrapper;
 
-public class SuckerBlockContainer extends Container {
+public abstract class SuckerBlockContainer extends Container {
 
 	private TileEntity tileEntity;
 	private PlayerEntity playerEntity;
 	private IItemHandler playerInventory;
 	
-	public SuckerBlockContainer(int id, World world, BlockPos pos, PlayerInventory inv, PlayerEntity player) {
-		super(ModBlocks.SUCKERBLOCK_CONTAINER, id);
+	public SuckerBlockContainer(int id, World world, BlockPos pos, PlayerInventory inv, PlayerEntity player,
+                                ContainerType<?> ct) {
+		super(ct, id);
 		this.tileEntity = world.getTileEntity(pos);
 		this.playerEntity = player;
 		this.playerInventory = new InvWrapper((IInventory) inv);
@@ -33,10 +35,12 @@ public class SuckerBlockContainer extends Container {
         layoutPlayerInventorySlots(10, 70);
 	}
 
+	protected abstract Block getBlock();
+
 	@Override
 	public boolean canInteractWith(PlayerEntity playerIn) {
 		return isWithinUsableDistance(IWorldPosCallable.of(tileEntity.getWorld(), tileEntity.getPos()),
-				playerEntity, ModBlocks.SUCKERBLOCK);
+				playerEntity, getBlock());
 	}
 	
     @Override

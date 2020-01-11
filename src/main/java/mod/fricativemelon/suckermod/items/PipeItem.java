@@ -1,6 +1,6 @@
-package com.sucker.suckermod.items;
+package mod.fricativemelon.suckermod.items;
 
-import com.sucker.suckermod.SuckerMod;
+import mod.fricativemelon.suckermod.SuckerMod;
 
 import net.minecraft.item.Item;
 
