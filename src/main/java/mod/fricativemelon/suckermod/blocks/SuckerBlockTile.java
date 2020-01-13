@@ -37,6 +37,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Supplier;
 
 import static net.minecraft.block.Block.getStateId;
 import static net.minecraft.enchantment.EnchantmentHelper.getEnchantmentLevel;
@@ -44,13 +45,43 @@ import static net.minecraft.enchantment.EnchantmentHelper.getEnchantmentLevel;
 @SuppressWarnings("ALL")
 public abstract class SuckerBlockTile extends TileEntity implements ITickableTileEntity, INamedContainerProvider {
 	private LazyOptional<IItemHandler> handler = LazyOptional.of(this::createHandler);
-	private BlockPos facingPos;
 	protected int ticks;
+	private BlockPos facingPos;
 
 	public SuckerBlockTile(TileEntityType<?> block) {
 		super(block);
 		this.ticks = 0;
 		this.facingPos = null;
+	}
+
+	protected enum PlacementStatus {
+		PLACEABLE,
+		UNPLACEABLE,
+		SOLID
+	}
+
+	protected void setFacingPos(BlockPos pos) {
+		facingPos = pos;
+	}
+
+	protected static boolean isHarvestable(World worldIn, BlockPos pos) {
+		BlockState state = worldIn.getBlockState(pos);
+		if (state.isAir(worldIn, pos) || state.getMaterial() == Material.WATER) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
+	protected static PlacementStatus isPassable(World worldIn, BlockPos pos, Block block) {
+		BlockState state = worldIn.getBlockState(pos);
+		if (state.isSolid()) {
+			return PlacementStatus.SOLID;
+		} else if (state.isAir(worldIn, pos) && block.getDefaultState().isValidPosition(worldIn, pos)) {
+			return PlacementStatus.PLACEABLE;
+		} else {
+			return PlacementStatus.UNPLACEABLE;
+		}
 	}
 
 	protected IItemHandler getHandler() {
@@ -92,7 +123,7 @@ public abstract class SuckerBlockTile extends TileEntity implements ITickableTil
 
 	protected BlockPos getFacingPos() {
 		if (facingPos == null) {
-			facingPos = pos.offset(world.getBlockState(pos).get(BlockStateProperties.FACING));
+			return pos.offset(world.getBlockState(pos).get(BlockStateProperties.FACING));
 		}
 		return facingPos;
 	}
@@ -124,31 +155,7 @@ public abstract class SuckerBlockTile extends TileEntity implements ITickableTil
 		}
 	}
 
-	protected boolean isDelaying() {
-		return true;
-	}
-
-	@Override
-	public void tick() {
-		BlockPos fp = getFacingPos();
-		if (world == null || world.isRemote) {
-			return;
-		}
-		if (isDelaying()) {
-			if (ticks > 0) {
-				ticks--;
-			} else {
-				setUpBlockTicks(fp);
-			}
-		} else if (checkBlockTicks(fp)) {
-			ticks--;
-			triggerTickChange();
-			if (ticks == 0) {
-				resolveBlockTicks(fp);
-				ticks = 5;
-			}
-		}
-	}
+	protected void powerChange(boolean rising) {}
 
 	/*public void tickOld() {
 		if (world == null || world.isRemote) {

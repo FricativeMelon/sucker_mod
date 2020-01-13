@@ -2,6 +2,7 @@ package mod.fricativemelon.suckermod.blocks;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Rotation;
 import net.minecraft.world.IBlockReader;
 
 import javax.annotation.Nullable;
@@ -12,6 +13,8 @@ public class HarvesterBlock extends SuckerBlock {
         super();
         setRegistryName("harvesterblock");
     }
+
+
 
     @Nullable
     @Override

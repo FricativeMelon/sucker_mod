@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "C",
+    "X",
+    "#"
+  ],
+  "key": {
+    "#": {
+		"tag": "forge:rods/wooden"
+    },
+    "X": {
+    	"tag": "forge:gems/lapis"
+    },
+    "C": {
+        "item": "minecraft:clay_ball"
+    }
+  },
+  "result": {
+    "item": "suckermod:rotateritem",
+    "count": 1
+  }
+}

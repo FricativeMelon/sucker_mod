@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "###",
+    "#X#",
+    "#R#"
+  ],
+  "key": {
+    "#": {
+		"item": "minecraft:cobblestone"
+    },
+    "X": {
+        "item": "minecraft:stick"
+    },
+    "R": {
+    	"tag": "forge:dusts/redstone"
+    }
+  },
+  "result": {
+    "item": "suckermod:harvesterblock"
+  }
+}

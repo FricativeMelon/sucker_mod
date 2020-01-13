@@ -1,8 +1,10 @@
 {
 	"item.suckermod.pipeitem": "Pipe",
+	"item.suckermod.rotateritem": "Earth Wand",
 	"block.suckermod.placerblock": "Placer",
 	"block.suckermod.harvesterblock": "Harvester",
-	
+	"block.suckermod.rotaterblock": "Rotater",
+
 	"comment": "Creative Tabs",
 	"itemGroup.suckermod": "Sucker Mod"
 }

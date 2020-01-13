@@ -10,7 +10,9 @@ import net.minecraft.inventory.container.Container;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.items.IItemHandler;
 
@@ -44,7 +46,7 @@ public class HarvesterBlockTile extends SuckerBlockTile {
             Block.spawnDrops(state, world, pos, tileentity, null, stack);
         }
 
-        prevState = null;
+        resetState(0);
     }
 
     protected void resolveBlockTicks(BlockPos pos) {
@@ -55,85 +57,96 @@ public class HarvesterBlockTile extends SuckerBlockTile {
             ItemStack stack = h.getStackInSlot(0);
             stack = h.extractItem(0, stack.getMaxStackSize(), false);
             resolveHarvest(stack, state, pos);
+            ticks = 5;
             h.insertItem(0, stack, false);
         }
     }
-
+    @SuppressWarnings("ConstantConditions")
     //turns the block into an item
     protected void setUpBlockTicks(BlockPos pos) {
         IItemHandler h = getHandler();
         if (h != null) {
-            @SuppressWarnings("ConstantConditions")
-            BlockState state = world.getBlockState(pos);
+            Direction myDir = world.getBlockState(this.pos).get(BlockStateProperties.FACING);
             ItemStack stack = h.getStackInSlot(0);
             stack = h.extractItem(0, stack.getMaxStackSize(), false);
             Item item = stack.getItem();
-			/*} else if (item instanceof BucketItem) {
-				Fluid flu = ((BucketItem) item).getFluid();
-				if (flu == Fluids.EMPTY) {
-					if (state.getBlock() instanceof FlowingFluidBlock) {
-						FlowingFluidBlock b = (FlowingFluidBlock) state.getBlock();
-						if (b.getFluidState(state).isSource()) {
-							Fluid flu2 = b.getFluid();
-							world.setBlockState(pos, Blocks.AIR.getDefaultState());
-							if (flu2 == Fluids.LAVA) {
-								//h.extractItem(0)
-								h.insertItem(0, new ItemStack(Items.LAVA_BUCKET), true);
-							} else if (flu2 == Fluids.WATER) {
-								h.insertItem(0, new ItemStack(Items.LAVA_BUCKET), true);
-							}
-						}
-					}
-				} else {
-					Block blo = Blocks.AIR;
-					if (flu == Fluids.LAVA) {
-						blo = Blocks.LAVA;
-					} else if (flu == Fluids.WATER) {
-						blo = Blocks.WATER;
-					}
-					world.setBlockState(pos, blo.getDefaultState());
-					h.insertItem(0, new ItemStack(Items.BUCKET), true);
-				}*/
-            if (state.getMaterial() != Material.AIR) {
-                prevState = state;
-                prevItem = item;
-                maxTicks = (int)(20 * getDigTime(world, stack, pos));
-                ticks = (int)maxTicks;
-                if (ticks == 0) {
-                    resolveHarvest(stack, state, pos);
+            int count = 1;
+            while (count <= 12) {
+                if (isHarvestable(world, pos)) {
+                    BlockState state = world.getBlockState(pos);
+                    prevState = state;
+                    prevItem = item;
+                    maxTicks = (int)(20 * getDigTime(world, stack, pos));
+                    ticks = (int)maxTicks;
+                    if (ticks == 0) {
+                        resolveHarvest(stack, state, pos);
+                    }
+                    setFacingPos(pos);
+                    break;
+                } else {
+                    count++;
+                    pos = pos.offset(myDir);
                 }
             }
             h.insertItem(0, stack, false);
         }
     }
 
-    protected boolean isDelaying() {
-        return prevState == null;
-    }
-
     protected boolean checkBlockTicks(BlockPos pos) {
         IItemHandler h = getHandler();
-        @SuppressWarnings("ConstantConditions")
+        //noinspection ConstantConditions
         BlockState state = world.getBlockState(pos);
         if (state.getBlock() != prevState.getBlock()) {
-            prevState = null;
-            ticks = 5;
+            resetState(5);
             return false;
         } else if (h != null) {
             ItemStack stack = h.getStackInSlot(0);
             Item item = stack.getItem();
             if (item != prevItem) {
-                prevState = null;
-                ticks = 0;
+                resetState(0);
                 return false;
             }
         }
         return true;
     }
 
-    protected void triggerTickChange() {
-        int x = 9 - (int)(10.0 * ticks / maxTicks);
-        world.sendBlockBreakProgress(-1, getFacingPos(), x);
+    private void resetState(int ticks) {
+        this.prevState = null;
+        this.ticks = ticks;
+        setFacingPos(null);
+    }
+
+    @Override
+    protected void powerChange(boolean rising) {
+        if (!rising) {
+            resetState(0);
+        }
+    }
+
+    @Override
+    public void tick() {
+        BlockPos fp = getFacingPos();
+        if (world == null || world.isRemote) {
+            return;
+        }
+        if (!world.getBlockState(this.pos).get(BlockStateProperties.TRIGGERED)) {
+            return;
+        }
+        if (prevState == null) {
+            if (ticks > 0) {
+                ticks--;
+            } else {
+                setUpBlockTicks(fp);
+            }
+        } else if (checkBlockTicks(fp)) {
+            ticks--;
+            int x = 9 - (int)(10.0 * ticks / maxTicks);
+            world.sendBlockBreakProgress(-1, getFacingPos(), x);
+            if (ticks == 0) {
+                resolveBlockTicks(fp);
+                ticks = 5;
+            }
+        }
     }
 
     @Override

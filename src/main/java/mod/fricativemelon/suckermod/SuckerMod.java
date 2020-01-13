@@ -2,6 +2,7 @@ package mod.fricativemelon.suckermod;
 
 import mod.fricativemelon.suckermod.blocks.*;
 import mod.fricativemelon.suckermod.items.PipeItem;
+import mod.fricativemelon.suckermod.items.RotaterItem;
 import mod.fricativemelon.suckermod.setup.ClientProxy;
 import mod.fricativemelon.suckermod.setup.IProxy;
 import mod.fricativemelon.suckermod.setup.ModSetup;
@@ -103,7 +104,7 @@ public class SuckerMod
         public static void onBlocksRegistry(final RegistryEvent.Register<Block> event) {
             event.getRegistry().register(new PlacerBlock());
             event.getRegistry().register(new HarvesterBlock());
-
+            event.getRegistry().register(new RotaterBlock());
         }
 
         @SubscribeEvent
@@ -114,8 +115,12 @@ public class SuckerMod
                     .setRegistryName("placerblock"));
             event.getRegistry().register(new BlockItem(ModBlocks.HARVESTERBLOCK, properties)
                     .setRegistryName("harvesterblock"));
+            event.getRegistry().register(new BlockItem(ModBlocks.ROTATERBLOCK, properties)
+                    .setRegistryName("rotaterblock"));
 
             event.getRegistry().register(new PipeItem());
+            event.getRegistry().register(new RotaterItem());
+
         }
 
         @SubscribeEvent
