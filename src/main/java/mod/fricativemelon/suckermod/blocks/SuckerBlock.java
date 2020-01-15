@@ -59,7 +59,6 @@ public abstract class SuckerBlock extends Block {
 			this.powerChange(false, worldIn, pos);
 			worldIn.setBlockState(pos, state.with(BlockStateProperties.TRIGGERED, false), 4);
 		}
-
 	}
 
 	@Override

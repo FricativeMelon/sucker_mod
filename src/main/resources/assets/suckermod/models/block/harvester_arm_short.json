@@ -1,0 +1,8 @@
+{
+    "parent": "suckermod:block/template_harvester_arm_short",
+    "textures": {
+        "unsticky": "minecraft:block/piston_top",
+        "side": "minecraft:block/piston_side",
+        "platform": "minecraft:block/piston_top"
+    }
+}

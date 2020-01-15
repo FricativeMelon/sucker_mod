@@ -1,8 +1,13 @@
 package mod.fricativemelon.suckermod.blocks;
 
+import mod.fricativemelon.suckermod.items.ModItems;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.DirectionalBlock;
 import net.minecraft.block.material.Material;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.fluid.IFluidState;
@@ -13,10 +18,15 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.items.IItemHandler;
 
+import java.util.List;
+
 import static net.minecraft.block.Block.getStateId;
+import static net.minecraft.block.Block.nudgeEntitiesWithNewState;
+import static net.minecraft.state.properties.BlockStateProperties.*;
 
 public class HarvesterBlockTile extends SuckerBlockTile {
 
@@ -61,35 +71,17 @@ public class HarvesterBlockTile extends SuckerBlockTile {
             h.insertItem(0, stack, false);
         }
     }
-    @SuppressWarnings("ConstantConditions")
-    //turns the block into an item
-    protected void setUpBlockTicks(BlockPos pos) {
-        IItemHandler h = getHandler();
-        if (h != null) {
-            Direction myDir = world.getBlockState(this.pos).get(BlockStateProperties.FACING);
-            ItemStack stack = h.getStackInSlot(0);
-            stack = h.extractItem(0, stack.getMaxStackSize(), false);
-            Item item = stack.getItem();
-            int count = 1;
-            while (count <= 12) {
-                if (isHarvestable(world, pos)) {
-                    BlockState state = world.getBlockState(pos);
-                    prevState = state;
-                    prevItem = item;
-                    maxTicks = (int)(20 * getDigTime(world, stack, pos));
-                    ticks = (int)maxTicks;
-                    if (ticks == 0) {
-                        resolveHarvest(stack, state, pos);
-                    }
-                    setFacingPos(pos);
-                    break;
-                } else {
-                    count++;
-                    pos = pos.offset(myDir);
-                }
-            }
-            h.insertItem(0, stack, false);
+
+    protected void onHarvest(ItemStack itemStack, BlockPos blockpos) {
+        BlockState state = world.getBlockState(blockpos);
+        prevState = state;
+        prevItem = itemStack.getItem();
+        maxTicks = (int)(20 * getDigTime(world, itemStack, blockpos));
+        ticks = maxTicks;
+        if (ticks == 0) {
+            resolveHarvest(itemStack, state, blockpos);
         }
+        setFacingPos(blockpos);
     }
 
     protected boolean checkBlockTicks(BlockPos pos) {
@@ -107,46 +99,44 @@ public class HarvesterBlockTile extends SuckerBlockTile {
                 return false;
             }
         }
-        return true;
+        return state.getBlock() != ModBlocks.HARVESTER_ARM_BLOCK
+                || state.has(FACING)
+                && state.get(FACING) != world.getBlockState(this.pos).get(FACING);
     }
 
-    private void resetState(int ticks) {
-        this.prevState = null;
-        this.ticks = ticks;
-        setFacingPos(null);
-    }
-
-    @Override
-    protected void powerChange(boolean rising) {
-        if (!rising) {
-            resetState(0);
-        }
-    }
-
-    @Override
     public void tick() {
+        super.tick();
         BlockPos fp = getFacingPos();
-        if (world == null || world.isRemote) {
-            return;
-        }
-        if (!world.getBlockState(this.pos).get(BlockStateProperties.TRIGGERED)) {
-            return;
-        }
         if (prevState == null) {
             if (ticks > 0) {
                 ticks--;
             } else {
+                if (!world.getBlockState(this.pos).get(TRIGGERED)) {
+                    tryRetract();
+                    return;
+                }
                 setUpBlockTicks(fp);
             }
         } else if (checkBlockTicks(fp)) {
             ticks--;
             int x = 9 - (int)(10.0 * ticks / maxTicks);
-            world.sendBlockBreakProgress(-1, getFacingPos(), x);
+            world.sendBlockBreakProgress(-1, fp, x);
             if (ticks == 0) {
                 resolveBlockTicks(fp);
+                world.sendBlockBreakProgress(-1, fp, 0);
                 ticks = 5;
             }
         }
+    }
+
+    protected void resetState(int ticks) {
+        super.resetState(ticks);
+        this.prevState = null;
+    }
+
+    @Override
+    protected void powerChange(boolean rising) {
+        resetState(0);
     }
 
     @Override

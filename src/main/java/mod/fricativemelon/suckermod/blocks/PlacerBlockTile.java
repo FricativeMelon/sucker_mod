@@ -28,33 +28,30 @@ public class PlacerBlockTile extends SuckerBlockTile {
         super(ModBlocks.PLACERBLOCK_TILE);
     }
 
-    //places the block
-    protected void setUpBlockTicks(BlockPos pos) {
-        IItemHandler h = this.getHandler();
-        if (h != null && world != null) {
-            Direction myDir = world.getBlockState(this.pos).get(BlockStateProperties.FACING);
-            ItemStack stack = h.getStackInSlot(0);
-            stack = h.extractItem(0, stack.getMaxStackSize(), false);
+    protected void onNoRods(ItemStack itemStack, BlockPos blockpos) {
+        Item item = itemStack.getItem();
+        if (item instanceof BlockItem) {
+            //this is the case where you do something
+            Block block = ((BlockItem) item).getBlock();
+            world.setBlockState(blockpos, block.getDefaultState());
+            itemStack.shrink(1);
+        }
+    }
+
+    protected boolean postRetract(BlockPos blockpos) {
+        IItemHandler h = getHandler();
+        if (h != null) {
+            ItemStack stack = h.extractItem(0, 1, false);
             Item item = stack.getItem();
             if (item instanceof BlockItem) {
                 Block block = ((BlockItem) item).getBlock();
-                int count = 1;
-                while (count <= 12) {
-                    switch (isPassable(world, pos, block)) {
-                        case UNPLACEABLE:
-                            count++;
-                            pos = pos.offset(myDir);
-                            break;
-                        case PLACEABLE:
-                            world.setBlockState(pos, block.getDefaultState());
-                            stack.shrink(1);
-                        case SOLID:
-                            count = 13;
-                    }
-                }
+                world.setBlockState(blockpos, block.getDefaultState());
+                return true;
+            } else {
+                h.insertItem(0, stack, false);
             }
-            h.insertItem(0, stack, false);
         }
+        return false;
     }
 
     @Override
@@ -66,7 +63,17 @@ public class PlacerBlockTile extends SuckerBlockTile {
 
     @Override
     public void tick() {
-
+        super.tick();
+        BlockPos fp = getFacingPos();
+        if (ticks > 0) {
+            ticks--;
+        } else {
+            if (!world.getBlockState(this.pos).get(BlockStateProperties.TRIGGERED)) {
+                tryRetract();
+                return;
+            }
+            setUpBlockTicks(fp);
+        }
     }
 
     @Override

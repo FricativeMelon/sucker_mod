@@ -8,5 +8,5 @@ public class ModItems {
 	public static PipeItem PIPEITEM;
 
 	@ObjectHolder("suckermod:rotateritem")
-	public static PipeItem ROTATERITEM;
+	public static RotaterItem ROTATERITEM;
 }

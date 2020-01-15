@@ -105,6 +105,8 @@ public class SuckerMod
             event.getRegistry().register(new PlacerBlock());
             event.getRegistry().register(new HarvesterBlock());
             event.getRegistry().register(new RotaterBlock());
+            event.getRegistry().register(new HarvesterArmBlock());
+
         }
 
         @SubscribeEvent

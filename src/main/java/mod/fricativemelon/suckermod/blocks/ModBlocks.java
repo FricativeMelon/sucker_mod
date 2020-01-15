@@ -26,6 +26,9 @@ public class ModBlocks {
 	@ObjectHolder("suckermod:harvesterblock")
 	public static ContainerType<HarvesterBlockContainer> HARVESTERBLOCK_CONTAINER;
 
+	@ObjectHolder("suckermod:harvesterarmblock")
+	public static HarvesterArmBlock HARVESTER_ARM_BLOCK;
+
 	@ObjectHolder("suckermod:rotaterblock")
 	public static RotaterBlock ROTATERBLOCK;
 
