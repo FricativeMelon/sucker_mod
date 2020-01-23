@@ -25,17 +25,12 @@ import static net.minecraft.block.Block.getStateId;
 public class PlacerBlockTile extends SuckerBlockTile {
 
     public PlacerBlockTile() {
-        super(ModBlocks.PLACERBLOCK_TILE);
+        super(ModBlocks.PLACER.tile);
     }
 
-    protected void onNoRods(ItemStack itemStack, BlockPos blockpos) {
-        Item item = itemStack.getItem();
-        if (item instanceof BlockItem) {
-            //this is the case where you do something
-            Block block = ((BlockItem) item).getBlock();
-            world.setBlockState(blockpos, block.getDefaultState());
-            itemStack.shrink(1);
-        }
+    @Override
+    protected void onNoExtend(BlockPos pos) {
+        postRetract(pos);
     }
 
     protected boolean postRetract(BlockPos blockpos) {
@@ -45,11 +40,14 @@ public class PlacerBlockTile extends SuckerBlockTile {
             Item item = stack.getItem();
             if (item instanceof BlockItem) {
                 Block block = ((BlockItem) item).getBlock();
-                world.setBlockState(blockpos, block.getDefaultState());
-                return true;
+                if (block.getDefaultState().isValidPosition(world, blockpos)) {
+                    world.setBlockState(blockpos, block.getDefaultState());
+                    return true;
+                }
             } else {
                 h.insertItem(0, stack, false);
             }
+            this.markDirty();
         }
         return false;
     }
@@ -58,21 +56,6 @@ public class PlacerBlockTile extends SuckerBlockTile {
     protected void powerChange(boolean rising) {
         if (rising) {
             setUpBlockTicks(getFacingPos());
-        }
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-        BlockPos fp = getFacingPos();
-        if (ticks > 0) {
-            ticks--;
-        } else {
-            if (!world.getBlockState(this.pos).get(BlockStateProperties.TRIGGERED)) {
-                tryRetract();
-                return;
-            }
-            setUpBlockTicks(fp);
         }
     }
 

@@ -1,5 +1,6 @@
 package mod.fricativemelon.suckermod.blocks;
 
+import mod.fricativemelon.suckermod.blocks.BlockDestroyProgress.DestructionResult;
 import mod.fricativemelon.suckermod.items.ModItems;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -30,15 +31,11 @@ import static net.minecraft.state.properties.BlockStateProperties.*;
 
 public class HarvesterBlockTile extends SuckerBlockTile {
 
-    private BlockState prevState;
-    private Item prevItem;
-    private int maxTicks;
+    private BlockDestroyProgress bdp;
 
     public HarvesterBlockTile() {
-        super(ModBlocks.HARVESTERBLOCK_TILE);
-        this.prevState = null;
-        this.prevItem = null;
-        this.maxTicks = 1;
+        super(ModBlocks.HARVESTER.tile);
+        this.bdp = null;
     }
 
     protected void resolveHarvest(ItemStack stack, BlockState state, BlockPos pos) {
@@ -56,7 +53,7 @@ public class HarvesterBlockTile extends SuckerBlockTile {
             Block.spawnDrops(state, world, pos, tileentity, null, stack);
         }
 
-        resetState(0);
+        resetState(5);
     }
 
     protected void resolveBlockTicks(BlockPos pos) {
@@ -67,71 +64,47 @@ public class HarvesterBlockTile extends SuckerBlockTile {
             ItemStack stack = h.getStackInSlot(0);
             stack = h.extractItem(0, stack.getMaxStackSize(), false);
             resolveHarvest(stack, state, pos);
-            ticks = 5;
             h.insertItem(0, stack, false);
+            this.markDirty();
         }
     }
 
-    protected void onHarvest(ItemStack itemStack, BlockPos blockpos) {
+    protected boolean onHarvest(ItemStack itemStack, BlockPos blockpos) {
         BlockState state = world.getBlockState(blockpos);
-        prevState = state;
-        prevItem = itemStack.getItem();
-        maxTicks = (int)(20 * getDigTime(world, itemStack, blockpos));
-        ticks = maxTicks;
-        if (ticks == 0) {
+        int t = (int)(20 * getDigTime(world, itemStack, blockpos));
+        if (t == 0) {
             resolveHarvest(itemStack, state, blockpos);
+            resetState(0);
+        } else {
+            this.bdp = new BlockDestroyProgress(blockpos, state.getBlock(), itemStack.getItem(), t);
         }
-        setFacingPos(blockpos);
+        return true;
     }
 
-    protected boolean checkBlockTicks(BlockPos pos) {
-        IItemHandler h = getHandler();
-        //noinspection ConstantConditions
-        BlockState state = world.getBlockState(pos);
-        if (state.getBlock() != prevState.getBlock()) {
-            resetState(5);
-            return false;
-        } else if (h != null) {
-            ItemStack stack = h.getStackInSlot(0);
-            Item item = stack.getItem();
-            if (item != prevItem) {
-                resetState(0);
-                return false;
-            }
-        }
-        return state.getBlock() != ModBlocks.HARVESTER_ARM_BLOCK
-                || state.has(FACING)
-                && state.get(FACING) != world.getBlockState(this.pos).get(FACING);
-    }
-
-    public void tick() {
-        super.tick();
-        BlockPos fp = getFacingPos();
-        if (prevState == null) {
-            if (ticks > 0) {
-                ticks--;
-            } else {
-                if (!world.getBlockState(this.pos).get(TRIGGERED)) {
-                    tryRetract();
-                    return;
+    @Override
+    protected void operantTick() {
+        if (bdp == null) {
+            super.operantTick();
+        } else {
+            IItemHandler h = getHandler();
+            if (h != null) {
+                BlockPos end = getArmEnd();
+                DestructionResult res = bdp.continueDestruction(world, end, h.getStackInSlot(0).getItem());
+                switch (res) {
+                    case CONTINUED: break;
+                    case FINISHED: resolveBlockTicks(end);
+                    case INTERRUPTED: resetState(0);
                 }
-                setUpBlockTicks(fp);
-            }
-        } else if (checkBlockTicks(fp)) {
-            ticks--;
-            int x = 9 - (int)(10.0 * ticks / maxTicks);
-            world.sendBlockBreakProgress(-1, fp, x);
-            if (ticks == 0) {
-                resolveBlockTicks(fp);
-                world.sendBlockBreakProgress(-1, fp, 0);
-                ticks = 5;
             }
         }
     }
 
     protected void resetState(int ticks) {
         super.resetState(ticks);
-        this.prevState = null;
+        if (bdp != null) {
+            this.bdp.continueDestruction(world, null, null);
+            this.bdp = null;
+        }
     }
 
     @Override

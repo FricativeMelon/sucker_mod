@@ -48,7 +48,6 @@ public class RotaterBlock extends Block {
 		);
 		this.setDefaultState(this.stateContainer.getBaseState().with(BlockStateProperties.FACING, Direction.NORTH)
 		.with(BlockStateProperties.TRIGGERED, false));
-		setRegistryName("rotaterblock");
 	}
 
 	public static <T> T rotateThroughArray(T d, T[] L) {

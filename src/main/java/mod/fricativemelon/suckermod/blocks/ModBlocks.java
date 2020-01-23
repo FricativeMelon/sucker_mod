@@ -1,14 +1,27 @@
 package mod.fricativemelon.suckermod.blocks;
 
-import net.minecraft.inventory.container.ContainerType;
-import net.minecraft.state.BooleanProperty;
-import net.minecraft.state.IntegerProperty;
-import net.minecraft.tileentity.TileEntityType;
+import mod.fricativemelon.suckermod.utils.RegisteredBlock;
+import mod.fricativemelon.suckermod.utils.RegisteredTileContainerBlock;
 import net.minecraftforge.registries.ObjectHolder;
 
 public class ModBlocks {
 
-	@ObjectHolder("suckermod:placerblock")
+	public static RegisteredTileContainerBlock<PlacerBlock, PlacerBlockTile, PlacerBlockContainer> PLACER =
+			new RegisteredTileContainerBlock<>("placerblock");
+
+	public static RegisteredTileContainerBlock<HarvesterBlock, HarvesterBlockTile, HarvesterBlockContainer> HARVESTER =
+			new RegisteredTileContainerBlock<>("harvesterblock");
+
+	public static RegisteredTileContainerBlock<MoverBlock, MoverBlockTile, MoverBlockContainer> MOVER =
+			new RegisteredTileContainerBlock<>("moverblock");
+
+	public static RegisteredBlock<HarvesterArmBlock> HARVESTER_ARM =
+			new RegisteredBlock<>("harvesterarmblock");
+
+	public static RegisteredBlock<RotaterBlock> ROTATER =
+			new RegisteredBlock<>("rotaterblock");
+
+	/*@ObjectHolder("suckermod:placerblock")
 	public static PlacerBlock PLACERBLOCK;
 
 	@ObjectHolder("suckermod:placerblock")
@@ -24,17 +37,6 @@ public class ModBlocks {
 	public static TileEntityType<HarvesterBlockTile> HARVESTERBLOCK_TILE;
 
 	@ObjectHolder("suckermod:harvesterblock")
-	public static ContainerType<HarvesterBlockContainer> HARVESTERBLOCK_CONTAINER;
+	public static ContainerType<HarvesterBlockContainer> HARVESTERBLOCK_CONTAINER;*/
 
-	@ObjectHolder("suckermod:harvesterarmblock")
-	public static HarvesterArmBlock HARVESTER_ARM_BLOCK;
-
-	@ObjectHolder("suckermod:rotaterblock")
-	public static RotaterBlock ROTATERBLOCK;
-
-	//@ObjectHolder("suckermod:lavafreezeblock")
-	//public static SuckerBlock LAVAFREEZEBLOCK;
-	
-	//@ObjectHolder("suckermod:flowfreezeblock")
-	//public static SuckerBlock FLOWFREEZEBLOCK;
 }

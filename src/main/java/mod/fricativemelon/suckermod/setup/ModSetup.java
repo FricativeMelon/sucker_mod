@@ -10,7 +10,7 @@ public class ModSetup {
 	public ItemGroup itemGroup = new ItemGroup("suckermod") {
 		@Override
 		public ItemStack createIcon() {
-			return new ItemStack(ModBlocks.PLACERBLOCK);
+			return new ItemStack(ModBlocks.PLACER.block);
 		}
 	};
 	

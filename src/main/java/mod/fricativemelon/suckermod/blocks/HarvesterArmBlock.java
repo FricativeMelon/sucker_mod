@@ -30,7 +30,7 @@ import net.minecraft.world.IWorld;
 import net.minecraft.world.IWorldReader;
 import net.minecraft.world.World;
 
-public class HarvesterArmBlock extends DirectionalBlock implements IWaterLoggable {
+public class HarvesterArmBlock extends DirectionalBlock implements IWaterLoggable, ISupportsRods {
     public static final BooleanProperty SHORT;
     protected static final VoxelShape PISTON_EXTENSION_EAST_AABB;
     protected static final VoxelShape PISTON_EXTENSION_WEST_AABB;
@@ -59,7 +59,6 @@ public class HarvesterArmBlock extends DirectionalBlock implements IWaterLoggabl
                 .with(FACING, Direction.NORTH)
                 .with(SHORT, false)
                 .with(BlockStateProperties.WATERLOGGED, false));
-        setRegistryName("harvesterarmblock");
     }
 
     public boolean func_220074_n(BlockState state) {
@@ -68,24 +67,6 @@ public class HarvesterArmBlock extends DirectionalBlock implements IWaterLoggabl
 
     public VoxelShape getShape(BlockState state, IBlockReader worldIn, BlockPos pos, ISelectionContext context) {
         return this.getArmShapeFromState(state);
-    }
-
-    private VoxelShape getExtensionShapeFromState(BlockState state) {
-        switch(state.get(FACING)) {
-            case DOWN:
-            default:
-                return PISTON_EXTENSION_DOWN_AABB;
-            case UP:
-                return PISTON_EXTENSION_UP_AABB;
-            case NORTH:
-                return PISTON_EXTENSION_NORTH_AABB;
-            case SOUTH:
-                return PISTON_EXTENSION_SOUTH_AABB;
-            case WEST:
-                return PISTON_EXTENSION_WEST_AABB;
-            case EAST:
-                return PISTON_EXTENSION_EAST_AABB;
-        }
     }
 
     private VoxelShape getArmShapeFromState(BlockState state) {
@@ -112,7 +93,7 @@ public class HarvesterArmBlock extends DirectionalBlock implements IWaterLoggabl
             BlockPos blockpos = pos.offset((state.get(FACING)));
             BlockState adjState = worldIn.getBlockState(blockpos);
             Block block = adjState.getBlock();
-            if (block == ModBlocks.HARVESTER_ARM_BLOCK) {
+            if (block == ModBlocks.HARVESTER_ARM.block) {
                 worldIn.removeBlock(blockpos, false);
             }
         }
@@ -142,9 +123,7 @@ public class HarvesterArmBlock extends DirectionalBlock implements IWaterLoggabl
         Direction myFacing = state.get(FACING);
         BlockState otherState = worldIn.getBlockState(pos.offset(myFacing.getOpposite()));
         Block block = otherState.getBlock();
-        if (block == ModBlocks.HARVESTERBLOCK
-                || block == ModBlocks.PLACERBLOCK
-                || block == ModBlocks.HARVESTER_ARM_BLOCK) {
+        if (block instanceof ISupportsRods) {
             return myFacing == otherState.get(BlockStateProperties.FACING);
         }
         return false;

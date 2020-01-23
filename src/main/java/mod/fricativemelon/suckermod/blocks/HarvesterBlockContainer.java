@@ -8,11 +8,15 @@ import net.minecraft.world.World;
 
 public class HarvesterBlockContainer extends SuckerBlockContainer {
     public HarvesterBlockContainer(int id, World world, BlockPos pos, PlayerInventory inv, PlayerEntity player) {
-        super(id, world, pos, inv, player, ModBlocks.HARVESTERBLOCK_CONTAINER);
+        super(id, world, pos, inv, player, ModBlocks.HARVESTER.container);
+    }
+
+    public HarvesterBlockContainer(int id, BlockPos pos, PlayerInventory inv) {
+        super(id, pos, inv, ModBlocks.HARVESTER.container);
     }
 
     @Override
     protected Block getBlock() {
-        return ModBlocks.HARVESTERBLOCK;
+        return ModBlocks.HARVESTER.block;
     }
 }

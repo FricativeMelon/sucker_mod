@@ -14,6 +14,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.fluid.IFluidState;
+import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.INamedContainerProvider;
@@ -46,18 +47,14 @@ import java.util.function.Supplier;
 import static net.minecraft.block.Block.getStateId;
 import static net.minecraft.enchantment.EnchantmentHelper.getEnchantmentLevel;
 
-@SuppressWarnings("ALL")
-public abstract class SuckerBlockTile extends TileEntity implements ITickableTileEntity, INamedContainerProvider {
+public abstract class SuckerBlockTile extends TileEntity
+		implements ITickableTileEntity, INamedContainerProvider, ITransferable {
 	private LazyOptional<IItemHandler> handler = LazyOptional.of(this::createHandler);
-	protected int ticks;
-	protected Direction recentFacing;
-	private BlockPos facingPos;
+	private int ticks;
 
 	public SuckerBlockTile(TileEntityType<?> block) {
 		super(block);
 		this.ticks = 0;
-		this.facingPos = null;
-		this.recentFacing = null;
 	}
 
 	protected enum PlacementStatus {
@@ -66,17 +63,9 @@ public abstract class SuckerBlockTile extends TileEntity implements ITickableTil
 		SOLID
 	}
 
-	protected void setFacingPos(BlockPos pos) {
-		facingPos = pos;
-	}
-
 	protected static boolean isHarvestable(World worldIn, BlockPos pos) {
 		BlockState state = worldIn.getBlockState(pos);
-		if (state.isAir(worldIn, pos) || state.getMaterial() == Material.WATER) {
-			return false;
-		} else {
-			return true;
-		}
+		return !state.isAir(worldIn, pos) && state.getMaterial() != Material.WATER;
 	}
 
 	protected static PlacementStatus isPassable(World worldIn, BlockPos pos, Block block) {
@@ -88,10 +77,6 @@ public abstract class SuckerBlockTile extends TileEntity implements ITickableTil
 		} else {
 			return PlacementStatus.UNPLACEABLE;
 		}
-	}
-
-	protected IItemHandler getHandler() {
-		return handler.orElse(null);
 	}
 
 	public static List<ItemStack> dropItemHandlerContents(IItemHandler itemHandler, Random random) {
@@ -111,6 +96,11 @@ public abstract class SuckerBlockTile extends TileEntity implements ITickableTil
 		return drops;
 	}
 
+	public static boolean isStackAcceptable(int slot, @Nonnull ItemStack stack) {
+		return (slot == 1) == (stack.getItem() == ModItems.PIPEITEM);
+		//return stack.getItem() == Items.DIAMOND;
+	}
+
 	public static double getDigTime(World world, ItemStack stack, BlockPos pos) {
 		BlockState state = world.getBlockState(pos);
 		double s = stack.getDestroySpeed(state);
@@ -127,44 +117,40 @@ public abstract class SuckerBlockTile extends TileEntity implements ITickableTil
 		}
 	}
 
+	protected IItemHandler getHandler() {
+		return handler.orElse(null);
+	}
+
 	protected BlockPos getFacingPos() {
-		if (facingPos == null) {
-			return pos.offset(world.getBlockState(pos).get(BlockStateProperties.FACING));
-		}
-		return facingPos;
+		return pos.offset(myDir());
 	}
 
 	protected void resolveHarvest(ItemStack stack, BlockState state, BlockPos pos) { }
 
 	protected void resolveBlockTicks(BlockPos pos) { }
 
-	protected void onHarvest(ItemStack itemStack, BlockPos blockpos) {
-
-	}
-
-	protected void onNoRods(ItemStack itemStack, BlockPos blockpos) {
-
+	protected boolean onHarvest(ItemStack itemStack, BlockPos blockpos) {
+		return true;
 	}
 
 	protected boolean postRetract(BlockPos blockpos) {
 		return false;
 	}
 
+	protected void onNoExtend(BlockPos pos) { }
+
 	protected void tryRetract() {
-		IItemHandler h = getHandler();
-		if (h != null) {
-			Direction myDir = world.getBlockState(this.pos).get(BlockStateProperties.FACING);
-			ItemStack stack = h.getStackInSlot(1);
-			BlockPos pos = getFacingPos();
-			if (world.getBlockState(pos).getBlock() == ModBlocks.HARVESTER_ARM_BLOCK) {
-				setFacingPos(pos.offset(myDir));
-				ticks = 0;
-			} else if (!pos.equals(this.pos.offset(myDir))) {
+		Direction myDir = world.getBlockState(this.pos).get(BlockStateProperties.FACING);
+		BlockPos end = getArmEnd();
+		if (end != null && !end.equals(this.pos.offset(myDir))) {
+			IItemHandler h = getHandler();
+			if (h != null) {
+				ItemStack stack = h.getStackInSlot(1);
 				if (stack.getItem() != ModItems.PIPEITEM && stack.getCount() > 0
 						|| stack.getMaxStackSize() <= stack.getCount()) {
 					return;
 				}
-				pos = pos.offset(myDir.getOpposite());
+				end = end.offset(myDir.getOpposite());
 				stack = h.extractItem(1, stack.getMaxStackSize(), false);
 				if (stack.getCount() == 0) {
 					stack = new ItemStack(ModItems.PIPEITEM, 1);
@@ -172,67 +158,90 @@ public abstract class SuckerBlockTile extends TileEntity implements ITickableTil
 					stack.setCount(stack.getCount() + 1);
 				}
 				h.insertItem(1, stack, false);
-				if (!postRetract(pos)) {
-					world.setBlockState(pos, Blocks.AIR.getDefaultState());
+				if (!postRetract(end)) {
+					world.removeBlock(end, true);
 				}
 				resetState(5);
+				this.markDirty();
 			}
+
 		}
 	}
 
+	protected boolean canExtendRod(BlockPos blockpos) {
+		IItemHandler h = this.getHandler();
+		if (h != null) {
+			ItemStack pillars = h.extractItem(1, 1, true);
+			if (pillars.getCount() > 0 && pillars.getItem() == ModItems.PIPEITEM) {
+				AxisAlignedBB aabb = new AxisAlignedBB(blockpos);
+				List<LivingEntity> L = world.getEntitiesWithinAABB(LivingEntity.class, aabb, null);
+				return L.size() == 0;
+			}
+		}
+		return false;
+	}
+
+	protected boolean extendRod(BlockPos blockpos) {
+		IItemHandler h = this.getHandler();
+		if (h != null) {
+			if (canExtendRod(blockpos)) {
+				h.extractItem(1, 1, false);
+				BlockState newState = ModBlocks.HARVESTER_ARM.block.getDefaultState()
+						.with(DirectionalBlock.FACING, myDir());
+				world.setBlockState(blockpos, newState);
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+	protected Direction myDir() {
+		return world.getBlockState(this.pos).get(BlockStateProperties.FACING);
+	}
 
 	//turns the block into an item
 	//places the block
-	protected void setUpBlockTicks(BlockPos pos){
+	protected void setUpBlockTicks(BlockPos pos) {
 		IItemHandler h = this.getHandler();
 		if (h != null && world != null) {
-			Direction myDir = world.getBlockState(this.pos).get(BlockStateProperties.FACING);
 			ItemStack stack = h.getStackInSlot(0);
 			stack = h.extractItem(0, stack.getMaxStackSize(), false);
-			Item item = stack.getItem();
-			if (world.getBlockState(pos).getBlock() == ModBlocks.HARVESTER_ARM_BLOCK) {
-				setFacingPos(pos.offset(myDir));
-				ticks = 0;
-			} else if (isHarvestable(world, pos)) {
-				onHarvest(stack, pos);
+			BlockPos end = getArmEnd();
+			if (end == null) {
+			} else if (isHarvestable(world, end) && onHarvest(stack, end)) {
 			} else {
-				ItemStack pillars = h.extractItem(1, 1, true);
-				if (pillars.getCount() > 0 && pillars.getItem() == ModItems.PIPEITEM) {
-					AxisAlignedBB aabb = new AxisAlignedBB(pos);
-					List<LivingEntity> L = world.getEntitiesWithinAABB(LivingEntity.class, aabb, null);
-					if (L.size() == 0) {
-						h.extractItem(1, 1, false);
-						BlockState newState = ModBlocks.HARVESTER_ARM_BLOCK.getDefaultState()
-								.with(DirectionalBlock.FACING, myDir);
-						world.setBlockState(pos, newState);
-					}
-				} else {
-					onNoRods(stack, pos);
+				if (!extendRod(end)) {
+					onNoExtend(end);
 				}
 				resetState(5);
 			}
-		h.insertItem(0, stack, false);
+			h.insertItem(0, stack, false);
+			this.markDirty();
 		}
 	}
 
 	protected void resetState(int ticks) {
 		this.ticks = ticks;
-		setFacingPos(null);
 	}
 
-	protected boolean checkBlockTicks(BlockPos pos) {
-		return false;
+	protected void operantTick() {
+		if (ticks > 0) {
+			ticks--;
+		} else {
+			if (!world.getBlockState(this.pos).get(BlockStateProperties.TRIGGERED)) {
+				tryRetract();
+				return;
+			}
+			setUpBlockTicks(getFacingPos());
+		}
 	}
 
 	public void tick() {
 		if (world == null || world.isRemote) {
 			return;
 		}
-		Direction newFacing = world.getBlockState(pos).get(BlockStateProperties.FACING);
-		if (newFacing != recentFacing) {
-			recentFacing = newFacing;
-			resetState(0);
-		}
+		operantTick();
 	}
 
 	public void dropContents(Random random) {
@@ -243,10 +252,24 @@ public abstract class SuckerBlockTile extends TileEntity implements ITickableTil
 			double y = (double)pos.getY();
 			double z = (double)pos.getZ();
 			for (ItemStack stack: L) {
-				assert world != null;
 				InventoryHelper.spawnItemStack(world, x, y, z, stack);
 			}
 		}
+	}
+
+	protected @Nullable BlockPos getArmEnd() {
+		Direction myDir = myDir();
+		BlockPos blockpos = pos.offset(myDir);
+		while (world.isAreaLoaded(pos, 1)) {
+			BlockState s = world.getBlockState(blockpos);
+			if (s.getBlock() == ModBlocks.HARVESTER_ARM.block
+					&& s.get(BlockStateProperties.FACING) == myDir) {
+				blockpos = blockpos.offset(myDir);
+			} else {
+				return blockpos;
+			}
+		}
+		return null;
 	}
 
 	protected void powerChange(boolean rising) {}
@@ -300,12 +323,22 @@ public abstract class SuckerBlockTile extends TileEntity implements ITickableTil
 		}
 		return super.getCapability(cap, side);
 	}
-	
-	public static boolean isStackAcceptable(int slot, @Nonnull ItemStack stack) {
-		return true;
-		//return stack.getItem() == Items.DIAMOND;
+
+	@Override
+	public TileEntity transfer() {
+		IItemHandler h = getHandler();
+		HarvesterBlockTile tileEntity = new HarvesterBlockTile();
+		IItemHandler h2 = tileEntity.getHandler();
+		if (h != null && h2 != null) {
+			System.out.println("transferring items...");
+			ItemStack stack1 = h.extractItem(0, h.getStackInSlot(0).getMaxStackSize(), false);
+			ItemStack stack2 = h.extractItem(1, h.getStackInSlot(1).getMaxStackSize(), false);
+			h.insertItem(0, stack1, false);
+			h.insertItem(1, stack2, false);
+		}
+		return tileEntity;
 	}
-	
+
 	private IItemHandler createHandler() {
 		return new ItemStackHandler(2) {
 			@Override

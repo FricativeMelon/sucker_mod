@@ -12,11 +12,10 @@ import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
 
-public class HarvesterBlock extends SuckerBlock {
+public class HarvesterBlock extends SuckerBlock implements ISupportsRods {
 
     public HarvesterBlock() {
         super();
-        setRegistryName("harvesterblock");
     }
 
     @Nullable

@@ -17,9 +17,9 @@ public class ClientProxy implements IProxy {
 
 	@Override
 	public void init() {
-		ScreenManager.registerFactory(ModBlocks.PLACERBLOCK_CONTAINER, SuckerBlockScreen::new);
-		ScreenManager.registerFactory(ModBlocks.HARVESTERBLOCK_CONTAINER, SuckerBlockScreen::new);
-
+		ScreenManager.registerFactory(ModBlocks.PLACER.container, SuckerBlockScreen::new);
+		ScreenManager.registerFactory(ModBlocks.HARVESTER.container, SuckerBlockScreen::new);
+		ScreenManager.registerFactory(ModBlocks.MOVER.container, SuckerBlockScreen::new);
 	}
 
 	@Override

@@ -8,11 +8,13 @@ import mod.fricativemelon.suckermod.setup.IProxy;
 import mod.fricativemelon.suckermod.setup.ModSetup;
 import mod.fricativemelon.suckermod.setup.ServerProxy;
 import net.minecraft.block.Block;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -102,10 +104,16 @@ public class SuckerMod
     public static class RegistryEvents {
         @SubscribeEvent
         public static void onBlocksRegistry(final RegistryEvent.Register<Block> event) {
-            event.getRegistry().register(new PlacerBlock());
+            ModBlocks.PLACER.setBlock(event, PlacerBlock::new);
+            ModBlocks.HARVESTER.setBlock(event, HarvesterBlock::new);
+            ModBlocks.MOVER.setBlock(event, MoverBlock::new);
+            ModBlocks.ROTATER.setBlock(event, RotaterBlock::new);
+            ModBlocks.HARVESTER_ARM.setBlock(event, HarvesterArmBlock::new);
+
+            /*event.getRegistry().register(new PlacerBlock());
             event.getRegistry().register(new HarvesterBlock());
             event.getRegistry().register(new RotaterBlock());
-            event.getRegistry().register(new HarvesterArmBlock());
+            event.getRegistry().register(new HarvesterArmBlock());*/
 
         }
 
@@ -113,12 +121,17 @@ public class SuckerMod
         public static void onItemsRegistry(final RegistryEvent.Register<Item> event) {
             Item.Properties properties = new Item.Properties()
                     .group(setup.itemGroup);
-            event.getRegistry().register(new BlockItem(ModBlocks.PLACERBLOCK, properties)
+            ModBlocks.PLACER.setItem(event, properties);
+            ModBlocks.HARVESTER.setItem(event, properties);
+            ModBlocks.MOVER.setItem(event, properties);
+            ModBlocks.ROTATER.setItem(event, properties);
+
+            /*event.getRegistry().register(new BlockItem(ModBlocks.PLACERBLOCK, properties)
                     .setRegistryName("placerblock"));
             event.getRegistry().register(new BlockItem(ModBlocks.HARVESTERBLOCK, properties)
-                    .setRegistryName("harvesterblock"));
-            event.getRegistry().register(new BlockItem(ModBlocks.ROTATERBLOCK, properties)
-                    .setRegistryName("rotaterblock"));
+                    .setRegistryName("harvesterblock"));*/
+            /*event.getRegistry().register(new BlockItem(ModBlocks.ROTATERBLOCK, properties)
+                    .setRegistryName("rotaterblock"));*/
 
             event.getRegistry().register(new PipeItem());
             event.getRegistry().register(new RotaterItem());
@@ -127,22 +140,28 @@ public class SuckerMod
 
         @SubscribeEvent
         public static void onTileEntityRegistry(final RegistryEvent.Register<TileEntityType<?>> event) {
-            event.getRegistry().register(TileEntityType.Builder.create(PlacerBlockTile::new, ModBlocks.PLACERBLOCK)
+            ModBlocks.PLACER.setTile(event, PlacerBlockTile::new);
+            ModBlocks.HARVESTER.setTile(event, HarvesterBlockTile::new);
+            ModBlocks.MOVER.setTile(event, MoverBlockTile::new);
+
+            /*event.getRegistry().register(TileEntityType.Builder.create(PlacerBlockTile::new, ModBlocks.PLACERBLOCK)
                     .build(null).setRegistryName("placerblock"));
             event.getRegistry().register(TileEntityType.Builder.create(HarvesterBlockTile::new, ModBlocks.HARVESTERBLOCK)
-                    .build(null).setRegistryName("harvesterblock"));
+                    .build(null).setRegistryName("harvesterblock"));*/
         }
 
         @SubscribeEvent
         public static void onContainerRegistry(final RegistryEvent.Register<ContainerType<?>> event) {
-            event.getRegistry().register(IForgeContainerType.create((windowId, inv, data) -> {
-                BlockPos pos = data.readBlockPos();
-                return new PlacerBlockContainer(windowId, SuckerMod.proxy.getClientWorld(), pos, inv, SuckerMod.proxy.getClientPlayer());
-            }).setRegistryName("placerblock"));
-            event.getRegistry().register(IForgeContainerType.create((windowId, inv, data) -> {
+            ModBlocks.PLACER.setContainer(event, (windowId, inv, data) ->
+                    new PlacerBlockContainer(windowId, data.readBlockPos(), inv));
+            ModBlocks.HARVESTER.setContainer(event, (windowId, inv, data) ->
+                    new HarvesterBlockContainer(windowId, data.readBlockPos(), inv));
+            ModBlocks.MOVER.setContainer(event, (windowId, inv, data) ->
+                    new MoverBlockContainer(windowId, data.readBlockPos(), inv));
+            /*event.getRegistry().register(IForgeContainerType.create((windowId, inv, data) -> {
                 BlockPos pos = data.readBlockPos();
                 return new HarvesterBlockContainer(windowId, SuckerMod.proxy.getClientWorld(), pos, inv, SuckerMod.proxy.getClientPlayer());
-            }).setRegistryName("harvesterblock"));
+            }).setRegistryName("harvesterblock"));*/
         }
         
     }

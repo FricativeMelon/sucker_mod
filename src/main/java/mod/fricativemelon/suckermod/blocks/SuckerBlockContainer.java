@@ -1,5 +1,6 @@
 package mod.fricativemelon.suckermod.blocks;
 
+import mod.fricativemelon.suckermod.SuckerMod;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -28,13 +29,17 @@ public abstract class SuckerBlockContainer extends Container {
 		super(ct, id);
 		this.tileEntity = world.getTileEntity(pos);
 		this.playerEntity = player;
-		this.playerInventory = new InvWrapper((IInventory) inv);
+		this.playerInventory = new InvWrapper(inv);
 		this.tileEntity.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY).ifPresent(h -> {
             addSlot(new SlotItemHandler(h, 0, 64, 24));
             addSlot(new SlotItemHandler(h, 1, 100, 24));
         });
         layoutPlayerInventorySlots(10, 70);
 	}
+
+    public SuckerBlockContainer(int id, BlockPos pos, PlayerInventory inv, ContainerType<?> ct) {
+        this(id, SuckerMod.proxy.getClientWorld(), pos, inv, SuckerMod.proxy.getClientPlayer(), ct);
+    }
 
 	protected abstract Block getBlock();
 
@@ -85,8 +90,6 @@ public abstract class SuckerBlockContainer extends Container {
 
         return itemstack;
     }
-
-
 
     private int addSlotRange(IItemHandler handler, int index, int x, int y, int amount, int dx) {
         for (int i = 0 ; i < amount ; i++) {
