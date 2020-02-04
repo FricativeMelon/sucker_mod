@@ -2,21 +2,13 @@ package mod.fricativemelon.suckermod.blocks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.swing.plaf.basic.BasicComboBoxUI;
 
 import mod.fricativemelon.suckermod.items.ModItems;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.fluid.IFluidState;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryHelper;
-import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.*;
 import net.minecraft.nbt.CompoundNBT;
@@ -25,13 +17,11 @@ import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.Direction;
-import net.minecraft.util.Hand;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.World;
-import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.common.util.LazyOptional;
@@ -42,13 +32,16 @@ import net.minecraftforge.items.ItemStackHandler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.function.Supplier;
 
-import static net.minecraft.block.Block.getStateId;
+import static mod.fricativemelon.suckermod.blocks.PoweredFaceBlock.POWERED_FROM_FACE;
+import static net.minecraft.block.DirectionalBlock.FACING;
 import static net.minecraft.enchantment.EnchantmentHelper.getEnchantmentLevel;
 
 public abstract class SuckerBlockTile extends TileEntity
-		implements ITickableTileEntity, INamedContainerProvider, ITransferable {
+		implements ITickableTileEntity, INamedContainerProvider {
+
+	protected static int TICK_PAUSE = 10;
+
 	private LazyOptional<IItemHandler> handler = LazyOptional.of(this::createHandler);
 	private int ticks;
 
@@ -121,10 +114,6 @@ public abstract class SuckerBlockTile extends TileEntity
 		return handler.orElse(null);
 	}
 
-	protected BlockPos getFacingPos() {
-		return pos.offset(myDir());
-	}
-
 	protected void resolveHarvest(ItemStack stack, BlockState state, BlockPos pos) { }
 
 	protected void resolveBlockTicks(BlockPos pos) { }
@@ -140,83 +129,102 @@ public abstract class SuckerBlockTile extends TileEntity
 	protected void onNoExtend(BlockPos pos) { }
 
 	protected void tryRetract() {
-		Direction myDir = world.getBlockState(this.pos).get(BlockStateProperties.FACING);
+		Direction myDir = world.getBlockState(this.pos).get(FACING);
 		BlockPos end = getArmEnd();
-		if (end != null && !end.equals(this.pos.offset(myDir))) {
-			IItemHandler h = getHandler();
-			if (h != null) {
-				ItemStack stack = h.getStackInSlot(1);
-				if (stack.getItem() != ModItems.PIPEITEM && stack.getCount() > 0
-						|| stack.getMaxStackSize() <= stack.getCount()) {
-					return;
+		if (end != null) {
+			if (end.equals(this.pos.offset(myDir))) {
+				BlockState newState = world.getBlockState(this.pos)
+						.with(SuckerBlock.PROCESS_STATE, SuckerBlock.ProcessState.AT_REST);
+				world.setBlockState(this.pos, newState);
+			} else {
+				IItemHandler h = getHandler();
+				if (h != null) {
+					ItemStack stack = h.getStackInSlot(1);
+					if (stack.getItem() != ModItems.PIPEITEM && stack.getCount() > 0
+							|| stack.getMaxStackSize() <= stack.getCount()) {
+						return;
+					}
+					end = end.offset(myDir.getOpposite());
+					stack = h.extractItem(1, stack.getMaxStackSize(), false);
+					if (stack.getCount() == 0) {
+						stack = new ItemStack(ModItems.PIPEITEM, 1);
+					} else {
+						stack.setCount(stack.getCount() + 1);
+					}
+					h.insertItem(1, stack, false);
+					if (!postRetract(end)) {
+						world.removeBlock(end, true);
+					}
+					resetState(TICK_PAUSE);
+					this.markDirty();
 				}
-				end = end.offset(myDir.getOpposite());
-				stack = h.extractItem(1, stack.getMaxStackSize(), false);
-				if (stack.getCount() == 0) {
-					stack = new ItemStack(ModItems.PIPEITEM, 1);
-				} else {
-					stack.setCount(stack.getCount() + 1);
-				}
-				h.insertItem(1, stack, false);
-				if (!postRetract(end)) {
-					world.removeBlock(end, true);
-				}
-				resetState(5);
-				this.markDirty();
 			}
 
 		}
 	}
 
-	protected boolean canExtendRod(BlockPos blockpos) {
+	private boolean entitiesInWay(BlockPos blockpos) {
+		AxisAlignedBB aabb = new AxisAlignedBB(blockpos);
+		List<LivingEntity> L = world.getEntitiesWithinAABB(LivingEntity.class, aabb, null);
+		return L.size() != 0;
+	}
+
+	private boolean outOfRods() {
 		IItemHandler h = this.getHandler();
 		if (h != null) {
 			ItemStack pillars = h.extractItem(1, 1, true);
-			if (pillars.getCount() > 0 && pillars.getItem() == ModItems.PIPEITEM) {
-				AxisAlignedBB aabb = new AxisAlignedBB(blockpos);
-				List<LivingEntity> L = world.getEntitiesWithinAABB(LivingEntity.class, aabb, null);
-				return L.size() == 0;
-			}
+			return pillars.getCount() == 0 || pillars.getItem() != ModItems.PIPEITEM;
 		}
-		return false;
+		return true;
 	}
 
-	protected boolean extendRod(BlockPos blockpos) {
+	protected boolean canExtendRod(BlockPos blockpos) {
+		return !outOfRods() && !entitiesInWay(blockpos);
+	}
+
+	protected void extendRod(BlockPos blockpos, int makePowered) {
 		IItemHandler h = this.getHandler();
 		if (h != null) {
-			if (canExtendRod(blockpos)) {
-				h.extractItem(1, 1, false);
-				BlockState newState = ModBlocks.HARVESTER_ARM.block.getDefaultState()
-						.with(DirectionalBlock.FACING, myDir());
-				world.setBlockState(blockpos, newState);
-				return true;
+			h.extractItem(1, 1, false);
+			BlockState newState = ModBlocks.HARVESTER_ARM.block.getDefaultState()
+					.with(FACING, myDir());
+			if (makePowered > 0) {
+				newState = newState.with(POWERED_FROM_FACE, true);
+				world.getPendingBlockTicks().scheduleTick(blockpos, ModBlocks.HARVESTER_ARM.block, makePowered);
 			}
-		}
-		return false;
+			world.setBlockState(blockpos, newState, 3);
+        }
 	}
 
 
 	protected Direction myDir() {
-		return world.getBlockState(this.pos).get(BlockStateProperties.FACING);
+		return world.getBlockState(this.pos).get(FACING);
 	}
 
 	//turns the block into an item
 	//places the block
-	protected void setUpBlockTicks(BlockPos pos) {
+	protected void setUpBlockTicks() {
 		IItemHandler h = this.getHandler();
 		if (h != null && world != null) {
 			ItemStack stack = h.getStackInSlot(0);
-			stack = h.extractItem(0, stack.getMaxStackSize(), false);
 			BlockPos end = getArmEnd();
 			if (end == null) {
-			} else if (isHarvestable(world, end) && onHarvest(stack, end)) {
+			} else if (isHarvestable(world, end)) {
+				onHarvest(stack, end);
 			} else {
-				if (!extendRod(end)) {
+				if (outOfRods()) {
 					onNoExtend(end);
 				}
-				resetState(5);
+				else if (!entitiesInWay(end)) {
+					extendRod(end, 0);
+				}
+				resetState(TICK_PAUSE);
 			}
-			h.insertItem(0, stack, false);
+			if (outOfRods()) {
+				BlockState newState = world.getBlockState(this.pos)
+						.with(SuckerBlock.PROCESS_STATE, SuckerBlock.ProcessState.RETRACTING);
+				world.setBlockState(this.pos, newState);
+			}
 			this.markDirty();
 		}
 	}
@@ -226,14 +234,19 @@ public abstract class SuckerBlockTile extends TileEntity
 	}
 
 	protected void operantTick() {
+		SuckerBlock.ProcessState processState = (world.getBlockState(this.pos).get(SuckerBlock.PROCESS_STATE));
+		if (processState == SuckerBlock.ProcessState.AT_REST) {
+			ticks = SuckerBlockTile.TICK_PAUSE;
+			return;
+		}
 		if (ticks > 0) {
 			ticks--;
 		} else {
-			if (!world.getBlockState(this.pos).get(BlockStateProperties.TRIGGERED)) {
+			if (processState == SuckerBlock.ProcessState.EXTENDING) {
+				setUpBlockTicks();
+			} else {
 				tryRetract();
-				return;
 			}
-			setUpBlockTicks(getFacingPos());
 		}
 	}
 
@@ -263,7 +276,7 @@ public abstract class SuckerBlockTile extends TileEntity
 		while (world.isAreaLoaded(pos, 1)) {
 			BlockState s = world.getBlockState(blockpos);
 			if (s.getBlock() == ModBlocks.HARVESTER_ARM.block
-					&& s.get(BlockStateProperties.FACING) == myDir) {
+					&& s.get(FACING) == myDir) {
 				blockpos = blockpos.offset(myDir);
 			} else {
 				return blockpos;
@@ -271,8 +284,6 @@ public abstract class SuckerBlockTile extends TileEntity
 		}
 		return null;
 	}
-
-	protected void powerChange(boolean rising) {}
 
 	/*public void tickOld() {
 		if (world == null || world.isRemote) {
@@ -322,21 +333,6 @@ public abstract class SuckerBlockTile extends TileEntity
 			return handler.cast();
 		}
 		return super.getCapability(cap, side);
-	}
-
-	@Override
-	public TileEntity transfer() {
-		IItemHandler h = getHandler();
-		HarvesterBlockTile tileEntity = new HarvesterBlockTile();
-		IItemHandler h2 = tileEntity.getHandler();
-		if (h != null && h2 != null) {
-			System.out.println("transferring items...");
-			ItemStack stack1 = h.extractItem(0, h.getStackInSlot(0).getMaxStackSize(), false);
-			ItemStack stack2 = h.extractItem(1, h.getStackInSlot(1).getMaxStackSize(), false);
-			h.insertItem(0, stack1, false);
-			h.insertItem(1, stack2, false);
-		}
-		return tileEntity;
 	}
 
 	private IItemHandler createHandler() {

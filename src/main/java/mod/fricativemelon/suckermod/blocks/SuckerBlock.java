@@ -16,6 +16,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.BlockItemUseContext;
+import net.minecraft.state.EnumProperty;
+import net.minecraft.state.IProperty;
 import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tags.FluidTags;
@@ -23,6 +25,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
+import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.world.IBlockReader;
@@ -30,22 +33,52 @@ import net.minecraft.world.IWorldReader;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.fml.network.NetworkHooks;
+import net.minecraftforge.items.IItemHandler;
 
-public abstract class SuckerBlock extends Block {
+public abstract class SuckerBlock extends PoweredFaceBlock implements ISupportsRods {
+
+	public static final EnumProperty<ProcessState> PROCESS_STATE =
+			EnumProperty.create("process_state", ProcessState.class);
+
+	public enum ProcessState implements IStringSerializable {
+		AT_REST("at_rest"),
+		EXTENDING("extending"),
+		RETRACTING("retracting");
+
+		private String name;
+
+		ProcessState(String name) {
+			this.name = name;
+		}
+
+		@Override
+		public String getName() {
+			return this.name;
+		}
+	}
+
 	public SuckerBlock() {
 		super(Properties.create(Material.ROCK)
 				.sound(SoundType.STONE)
 				.hardnessAndResistance(3.5f)
 		);
-		this.setDefaultState(this.stateContainer.getBaseState().with(BlockStateProperties.FACING, Direction.NORTH)
-		.with(BlockStateProperties.TRIGGERED, false));
+		this.setDefaultState(addDefaults(this.stateContainer.getBaseState()
+		.with(BlockStateProperties.TRIGGERED, false).with(PROCESS_STATE, ProcessState.AT_REST)));
 	}
 
-	private void powerChange(boolean rising, World worldIn, BlockPos pos) {
-		TileEntity tileentity = worldIn.getTileEntity(pos);
+	private BlockState powerChange(boolean rising, BlockState state) {
+		if (rising) {
+			switch (state.get(PROCESS_STATE)) {
+				case AT_REST:
+				case RETRACTING:
+					return state.with(PROCESS_STATE, ProcessState.EXTENDING);
+			}
+		}
+		return state;
+		/*TileEntity tileentity = worldIn.getTileEntity(pos);
 		if (tileentity instanceof SuckerBlockTile) {
 			((SuckerBlockTile)tileentity).powerChange(rising);
-		}
+		}*/
 	}
 
 
@@ -53,10 +86,10 @@ public abstract class SuckerBlock extends Block {
 		boolean flag = worldIn.isBlockPowered(pos) || worldIn.isBlockPowered(pos.up());
 		boolean flag1 = state.get(BlockStateProperties.TRIGGERED);
 		if (flag && !flag1) {
-			this.powerChange(true, worldIn, pos);
+			state = this.powerChange(true, state);
 			worldIn.setBlockState(pos, state.with(BlockStateProperties.TRIGGERED, true), 4);
 		} else if (!flag && flag1) {
-			this.powerChange(false, worldIn, pos);
+			state = this.powerChange(false, state);
 			worldIn.setBlockState(pos, state.with(BlockStateProperties.TRIGGERED, false), 4);
 		}
 	}
@@ -140,8 +173,8 @@ public abstract class SuckerBlock extends Block {
 	
 	@Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-		builder.add(BlockStateProperties.FACING);
-		builder.add(BlockStateProperties.TRIGGERED);
+    	super.fillStateContainer(builder);
+		builder.add(BlockStateProperties.TRIGGERED, PROCESS_STATE);
 	}
 
 }

@@ -6,7 +6,7 @@ import net.minecraft.world.IBlockReader;
 
 import javax.annotation.Nullable;
 
-public class MoverBlock extends SuckerBlock implements ISupportsRods {
+public class MoverBlock extends SuckerBlock {
 
     public MoverBlock() {
         super();

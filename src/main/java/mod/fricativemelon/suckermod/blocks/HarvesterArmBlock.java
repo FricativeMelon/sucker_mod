@@ -2,7 +2,6 @@ package mod.fricativemelon.suckermod.blocks;
 
 import mod.fricativemelon.suckermod.items.ModItems;
 import net.minecraft.block.*;
-import net.minecraft.block.Block.Properties;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -12,25 +11,20 @@ import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.pathfinding.PathType;
 import net.minecraft.state.BooleanProperty;
-import net.minecraft.state.EnumProperty;
-import net.minecraft.state.IProperty;
 import net.minecraft.state.StateContainer.Builder;
 import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.state.properties.PistonType;
 import net.minecraft.util.Direction;
-import net.minecraft.util.Hand;
 import net.minecraft.util.Mirror;
 import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.shapes.ISelectionContext;
 import net.minecraft.util.math.shapes.VoxelShape;
-import net.minecraft.util.math.shapes.VoxelShapes;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.IWorldReader;
 import net.minecraft.world.World;
 
-public class HarvesterArmBlock extends DirectionalBlock implements IWaterLoggable, ISupportsRods {
+public class HarvesterArmBlock extends PoweredFaceBlock implements IWaterLoggable, ISupportsRods {
     public static final BooleanProperty SHORT;
     protected static final VoxelShape PISTON_EXTENSION_EAST_AABB;
     protected static final VoxelShape PISTON_EXTENSION_WEST_AABB;
@@ -55,10 +49,9 @@ public class HarvesterArmBlock extends DirectionalBlock implements IWaterLoggabl
         super(Properties.create(Material.WOOD)
                 .sound(SoundType.WOOD)
                 .hardnessAndResistance(1.0f));
-        this.setDefaultState(this.stateContainer.getBaseState()
-                .with(FACING, Direction.NORTH)
+        this.setDefaultState(addDefaults(this.stateContainer.getBaseState()
                 .with(SHORT, false)
-                .with(BlockStateProperties.WATERLOGGED, false));
+                .with(BlockStateProperties.WATERLOGGED, false)));
     }
 
     public boolean func_220074_n(BlockState state) {
@@ -170,7 +163,8 @@ public class HarvesterArmBlock extends DirectionalBlock implements IWaterLoggabl
     }
 
     protected void fillStateContainer(Builder<Block, BlockState> builder) {
-        builder.add(FACING, SHORT, BlockStateProperties.WATERLOGGED);
+        super.fillStateContainer(builder);
+        builder.add(SHORT, BlockStateProperties.WATERLOGGED);
     }
 
     public boolean allowsMovement(BlockState state, IBlockReader worldIn, BlockPos pos, PathType type) {

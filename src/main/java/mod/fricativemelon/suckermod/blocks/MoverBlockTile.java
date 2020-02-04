@@ -2,78 +2,35 @@ package mod.fricativemelon.suckermod.blocks;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.DirectionalBlock;
-import net.minecraft.block.material.Material;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.fluid.IFluidState;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.container.Container;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.pathfinding.PathType;
 import net.minecraft.state.properties.BlockStateProperties;
-import net.minecraft.state.properties.ChestType;
-import net.minecraft.tags.Tag;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.shapes.VoxelShape;
+
 import net.minecraft.world.World;
-import net.minecraftforge.common.Tags;
 import net.minecraftforge.items.IItemHandler;
 
+
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import static mod.fricativemelon.suckermod.blocks.PoweredFaceBlock.POWERED_FROM_FACE;
+import static net.minecraft.block.DirectionalBlock.FACING;
 
 public class MoverBlockTile extends SuckerBlockTile {
     public MoverBlockTile() {
         super(ModBlocks.MOVER.tile);
     }
 
-    //Creates a new TileEntity with the same inventory as the one at blockpos in worldIn
-    /*private static TileEntity tryInventoryDup(World worldIn, BlockPos blockpos) {
-        BlockState state = worldIn.getBlockState(blockpos);
-        if (state.hasTileEntity()) {
-            TileEntity tileEntity = worldIn.getTileEntity(blockpos);
-            if (tileEntity instanceof IInventory) {
-                TileEntity newTE = state.createTileEntity(worldIn);
-                if (newTE instanceof IInventory) {
-                    IInventory invFrom = (IInventory) tileEntity;
-                    IInventory invTo = (IInventory) tileEntity;
-                    for (int i = 0; i < Math.min(invFrom.getSizeInventory(), invTo.getSizeInventory()); i++) {
-                        invTo.setInventorySlotContents(i, invFrom.getStackInSlot(i));
-                    }
-                    return newTE;
-                }
-            }
-        }
-        return null;
-    }*/
-
-    //Creates a new TileEntity with the same data as the one at blockpos in worldIn
-    private static TileEntity tryTotalDup(World worldIn, BlockPos blockpos) {
-        BlockState state = worldIn.getBlockState(blockpos);
-        if (state.hasTileEntity()) {
-            TileEntity tileEntity = worldIn.getTileEntity(blockpos);
-            TileEntity newTE = state.createTileEntity(worldIn);
-            if (tileEntity != null && newTE != null) {
-                CompoundNBT nbt = new CompoundNBT();
-                tileEntity.write(nbt);
-                newTE.read(nbt);
-                tileEntity.remove();
-                return newTE;
-            }
-        }
-        return null;
-    }
-
-    private static void analyzeBlockState(World worldIn, BlockPos blockpos) {
+    /*private static void analyzeBlockState(World worldIn, BlockPos blockpos) {
         BlockState state = worldIn.getBlockState(blockpos);
         System.out.println(state.getBlock().getTranslationKey());
         if (!state.isSolid()) { System.out.println("Non-solid");}
@@ -99,17 +56,10 @@ public class MoverBlockTile extends SuckerBlockTile {
         } else {
             System.out.println(vs.getBoundingBox());
         }
-    }
+    }*/
 
-    private static boolean canBeMoved(World worldIn, BlockPos blockpos, BlockPos otherPos) {
-        BlockState state = worldIn.getBlockState(blockpos);
-        if (!state.isValidPosition(worldIn, otherPos)) {
-            return false;
-        }
-        if (state.has(BlockStateProperties.CHEST_TYPE)
-                && state.get(BlockStateProperties.CHEST_TYPE) != ChestType.SINGLE) {
-            return false;
-        }
+    private boolean noPushExemption(BlockPos blockpos) {
+        BlockState state = world.getBlockState(blockpos);
         if (state.has(BlockStateProperties.EXTENDED)
                 && state.get(BlockStateProperties.EXTENDED)) {
             return false;
@@ -117,36 +67,75 @@ public class MoverBlockTile extends SuckerBlockTile {
         if (state.has(BlockStateProperties.PISTON_TYPE)) {
             return false;
         }
-        if (state.getBlock() instanceof ISupportsRods) {
-            Direction myDir = state.get(BlockStateProperties.FACING);
-            BlockState otherState = worldIn.getBlockState(blockpos.offset(myDir));
-            if (otherState.getBlock() == ModBlocks.HARVESTER_ARM.block
-                    && otherState.get(BlockStateProperties.FACING) == myDir) {
-                return false;
-            }
+        Block block = state.getBlock();
+        if (block instanceof IOccupiable && ((IOccupiable) block).isOccupied(world, blockpos)) {
+            return false;
         }
         return true;
+    }
+
+    private boolean canPush(BlockPos blockpos, BlockPos otherPos) {
+        BlockState state = world.getBlockState(blockpos);
+        BlockState otherState = world.getBlockState(otherPos);
+        return noPushExemption(blockpos) && state.isSolid()
+                && !(state.getBlockHardness(world, blockpos) < 0)
+                && otherState.getMaterial().isReplaceable() && canExtendRod(blockpos)
+                && state.isValidPosition(world, otherPos);
+    }
+
+    private int getPowerPushed() {
+        IItemHandler h = getHandler();
+        if (h != null) {
+            ItemStack stack =  h.getStackInSlot(0);
+            Item item = stack.getItem();
+            if (item == Items.REDSTONE) {
+                return stack.getCount();
+            } else if (item == Items.REDSTONE_BLOCK) {
+                return 9*stack.getCount();
+            }
+        }
+        return 0;
     }
 
     //idea: push block forward and replace with arm
     @Override
     protected boolean onHarvest(ItemStack itemStack, BlockPos blockpos) {
-        Direction myDir = world.getBlockState(this.pos).get(BlockStateProperties.FACING);
-        BlockPos otherPos = blockpos.offset(myDir);
-        if (!canBeMoved(world, blockpos, otherPos)) {
-            return true;
-        }
-        BlockState state = world.getBlockState(blockpos);
-        BlockState otherState = world.getBlockState(otherPos);
-        if (otherState.getMaterial().isReplaceable() && canExtendRod(blockpos)) {
+        Direction myDir = myDir();
+        //BlockPos otherPos = blockpos.offset(myDir);
+        //BlockState state = world.getBlockState(blockpos);
+        /*if (canPush(blockpos, otherPos)) {
             //analyzeBlockState(world, blockpos);
-            TileEntity te = tryTotalDup(world, blockpos);
-            extendRod(blockpos);
-            world.setBlockState(otherPos, state);
+            TileEntity te = MoverBlockStructureHelper.tryTotalDup(world, blockpos);
+            //IFluidState ifluidstate = world.getFluidState(pos);
+            //return world.setBlockState(blockpos, ifluidstate.getBlockState(), 67);
+            state = Block.getValidBlockForPosition(state, world, otherPos);
+            world.setBlockState(otherPos, state, 67);
+            int pp = this.getPowerPushed();
+            world.removeTileEntity(blockpos);
+            extendRod(blockpos, pp);
             if (te != null) {
                 world.setTileEntity(otherPos, te);
             }
-            resetState(5);
+            resetState(TICK_PAUSE);
+        }*/
+        if (noPushExemption(blockpos)) {
+            BlockState newState = ModBlocks.HARVESTER_ARM.block.getDefaultState()
+                    .with(FACING, myDir);
+            int makePowered = this.getPowerPushed();
+            if (makePowered > 0) {
+                newState = newState.with(POWERED_FROM_FACE, true);
+            }
+            boolean res = MoverBlockStructureHelper.moveBlocks(world, blockpos, myDir, newState);
+            if (res) {
+                if (makePowered > 0) {
+                    world.getPendingBlockTicks().scheduleTick(blockpos, ModBlocks.HARVESTER_ARM.block, makePowered);
+                }
+                IItemHandler h = this.getHandler();
+                if (h != null) {
+                    h.extractItem(1, 1, false);
+                }
+            }
+            resetState(TICK_PAUSE);
         }
         return true;
     }

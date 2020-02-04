@@ -10,7 +10,7 @@ import net.minecraft.world.server.ServerWorld;
 import javax.annotation.Nullable;
 import java.util.Random;
 
-public class PlacerBlock extends SuckerBlock implements ISupportsRods {
+public class PlacerBlock extends SuckerBlock {
 
     public PlacerBlock() {
         super();

@@ -38,6 +38,10 @@ public class HarvesterBlockTile extends SuckerBlockTile {
         this.bdp = null;
     }
 
+    public boolean isHarvesting() {
+        return this.bdp != null;
+    }
+
     protected void resolveHarvest(ItemStack stack, BlockState state, BlockPos pos) {
         world.playEvent(null, 2001, pos, getStateId(state));
         IFluidState ifluidstate = world.getFluidState(pos);
@@ -49,11 +53,10 @@ public class HarvesterBlockTile extends SuckerBlockTile {
 
         TileEntity tileentity = state.hasTileEntity() ? world.getTileEntity(pos) : null;
         if (state.getMaterial().isToolNotRequired() || stack.canHarvestBlock(state)) {
-            //noinspection ConstantConditions
             Block.spawnDrops(state, world, pos, tileentity, null, stack);
         }
 
-        resetState(5);
+        resetState(TICK_PAUSE);
     }
 
     protected void resolveBlockTicks(BlockPos pos) {
@@ -105,11 +108,6 @@ public class HarvesterBlockTile extends SuckerBlockTile {
             this.bdp.continueDestruction(world, null, null);
             this.bdp = null;
         }
-    }
-
-    @Override
-    protected void powerChange(boolean rising) {
-        resetState(0);
     }
 
     @Override
